@@ -6,6 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/fatih/color"
 )
 
 type Type string
@@ -13,6 +15,10 @@ type Type string
 const (
 	TypeFile   Type = "FILE"
 	TypeFolder Type = "FOLDER"
+)
+
+var (
+	folderColor = color.New(color.FgCyan)
 )
 
 type FileInfo interface {
@@ -134,10 +140,12 @@ func (f *Folder) Write(w io.Writer) error {
 	switch v := f.parent.(type) {
 	case *Folder:
 		if f.IsLast() {
-			w.Write([]byte(v.ChildPrefix + "└── " + f.Name() + "\n"))
+			w.Write([]byte(v.ChildPrefix + "└── "))
+			folderColor.Fprintln(w, f.Name())
 			f.ChildPrefix = v.ChildPrefix + "    "
 		} else {
-			w.Write([]byte(v.ChildPrefix + "├── " + f.Name() + "\n"))
+			w.Write([]byte(v.ChildPrefix + "├── "))
+			folderColor.Fprintln(w, f.Name())
 			f.ChildPrefix = v.ChildPrefix + "│   "
 		}
 	default:
