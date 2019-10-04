@@ -19,6 +19,7 @@ const (
 
 var (
 	folderColor = color.New(color.FgCyan)
+	symColor    = color.New(color.FgHiCyan)
 )
 
 type FileInfo interface {
@@ -34,7 +35,8 @@ type File struct {
 	parent FileInfo
 	isLast bool
 
-	path string
+	path    string
+	SymLink string
 }
 
 func NewFile(name string, parent FileInfo, isLast bool) File {
@@ -69,13 +71,28 @@ func (f *File) IsLast() bool {
 	return f.isLast
 }
 
+func (f *File) IsSym() bool {
+	return f.SymLink != ""
+}
+
 func (f *File) Write(w io.Writer) error {
 	switch v := f.parent.(type) {
 	case *Folder:
-		if f.IsLast() {
-			w.Write([]byte(v.ChildPrefix + "└── " + f.Name() + "\n"))
+		if f.IsSym() {
+			if f.IsLast() {
+				w.Write([]byte(v.ChildPrefix + "└── "))
+				symColor.Fprint(w, f.Name())
+			} else {
+				w.Write([]byte(v.ChildPrefix + "├── "))
+			}
+			symColor.Fprint(w, f.Name())
+			w.Write([]byte(" -> " + f.SymLink + "\n"))
 		} else {
-			w.Write([]byte(v.ChildPrefix + "├── " + f.Name() + "\n"))
+			if f.IsLast() {
+				w.Write([]byte(v.ChildPrefix + "└── " + f.Name() + "\n"))
+			} else {
+				w.Write([]byte(v.ChildPrefix + "├── " + f.Name() + "\n"))
+			}
 		}
 	default:
 		return errors.New("Unexpected parent type")
@@ -189,14 +206,19 @@ func Dirwalk(root FileInfo) error {
 		}
 
 		for i, file := range files {
+			isLast := i == len(files)-1
 			if file.IsDir() {
-				child := NewFolder(file.Name(), f, i == len(files)-1)
+				child := NewFolder(file.Name(), f, isLast)
 				Dirwalk(&child)
 				f.Children = append(f.Children, &child)
 				continue
 			}
 
-			child := NewFile(file.Name(), f, i == len(files)-1)
+			child := NewFile(file.Name(), f, isLast)
+			if file.Mode()&os.ModeSymlink != 0 {
+				sym, _ := os.Readlink(f.Path() + "/" + file.Name())
+				child.SymLink = sym
+			}
 			f.Children = append(f.Children, &child)
 		}
 	default:
