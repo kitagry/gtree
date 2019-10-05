@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 )
@@ -51,6 +52,11 @@ func (f *File) Name() string {
 	return f.name
 }
 
+func (f *File) Suffix() string {
+	n := strings.Split(f.name, ".")
+	return n[len(n)-1]
+}
+
 func (f *File) Type() Type {
 	return TypeFile
 }
@@ -76,22 +82,31 @@ func (f *File) IsSym() bool {
 }
 
 func (f *File) Write(w io.Writer) error {
+	icon, ok := icons[f.Suffix()]
+	if !ok {
+		icon = defaultFileIcon
+	}
+
 	switch v := f.parent.(type) {
 	case *Folder:
 		if f.IsSym() {
 			if f.IsLast() {
 				w.Write([]byte(v.ChildPrefix + "└── "))
-				symColor.Fprint(w, f.Name())
 			} else {
 				w.Write([]byte(v.ChildPrefix + "├── "))
 			}
+			color.New(icon.Color).Fprint(w, icon.Icon+" ")
 			symColor.Fprint(w, f.Name())
 			w.Write([]byte(" -> " + f.SymLink + "\n"))
 		} else {
 			if f.IsLast() {
-				w.Write([]byte(v.ChildPrefix + "└── " + f.Name() + "\n"))
+				w.Write([]byte(v.ChildPrefix + "└── "))
+				color.New(icon.Color).Fprint(w, icon.Icon+" ")
+				w.Write([]byte(f.Name() + "\n"))
 			} else {
-				w.Write([]byte(v.ChildPrefix + "├── " + f.Name() + "\n"))
+				w.Write([]byte(v.ChildPrefix + "├── "))
+				color.New(icon.Color).Fprint(w, icon.Icon+" ")
+				w.Write([]byte(f.Name() + "\n"))
 			}
 		}
 	default:
