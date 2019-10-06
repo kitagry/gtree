@@ -29,7 +29,7 @@ func main() {
 
 	directories, err := parser.Parse()
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	if len(directories) == 0 {
