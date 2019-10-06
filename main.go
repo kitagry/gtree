@@ -12,6 +12,8 @@ import (
 
 type ListOptions struct {
 	IsAll []bool `short:"a" long:"all" description:"All files are listed."`
+
+	OnlyDirectory []bool `short:"d" description:"List directories only."`
 }
 
 type MiscellaneousOptions struct {
@@ -38,7 +40,7 @@ func newOptionsParser(opt *Options) *flags.Parser {
 
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "[-a] [--version] [--] [<directory list>]"
+	parser.Usage = "[-ad] [--version] [--] [<directory list>]"
 	return parser
 }
 
@@ -94,6 +96,16 @@ func dirwalk(root FileInfo, ch chan<- FileInfo) {
 			fmt.Println(err)
 			close(ch)
 			return
+		}
+
+		if len(opts.ListOptions.OnlyDirectory) != 0 {
+			tmp := make([]os.FileInfo, 0)
+			for _, f := range files {
+				if f.IsDir() {
+					tmp = append(tmp, f)
+				}
+			}
+			files = tmp
 		}
 
 		for i, file := range files {
