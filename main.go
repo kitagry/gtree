@@ -40,7 +40,7 @@ func newOptionsParser(opt *Options) *flags.Parser {
 
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "[-ad] [--version] [--] [<directory list>]"
+	parser.Usage = "[-adf] [--version] [--help] [--] [<directory list>]"
 	return parser
 }
 
