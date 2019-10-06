@@ -32,11 +32,12 @@ type File struct {
 	SymLink string
 }
 
-func NewFile(name string, parent FileInfo, isLast bool) File {
-	return File{
-		name:   name,
-		parent: parent,
-		isLast: isLast,
+func NewFile(name string, parent FileInfo, isLast bool, symLink string) *File {
+	return &File{
+		name:    name,
+		parent:  parent,
+		isLast:  isLast,
+		SymLink: symLink,
 	}
 }
 
@@ -117,8 +118,8 @@ type Folder struct {
 	path string
 }
 
-func NewFolder(name string, parent FileInfo, isLast bool) Folder {
-	return Folder{
+func NewFolder(name string, parent FileInfo, isLast bool) *Folder {
+	return &Folder{
 		name:   name,
 		parent: parent,
 		isLast: isLast,
@@ -152,12 +153,6 @@ func (f *Folder) IsLast() bool {
 func (f *Folder) Write(w io.Writer) error {
 	if f.parent == nil {
 		w.Write([]byte(f.Name() + "\n"))
-		for _, child := range f.Children {
-			err := child.Write(w)
-			if err != nil {
-				return err
-			}
-		}
 		return nil
 	}
 
@@ -174,13 +169,6 @@ func (f *Folder) Write(w io.Writer) error {
 		}
 	default:
 		return errors.New("Unexpected parent type")
-	}
-
-	for _, child := range f.Children {
-		err := child.Write(w)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

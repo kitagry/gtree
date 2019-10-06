@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -46,25 +46,36 @@ func main() {
 
 func Run(root string) error {
 	rootFile := NewFolder(root, nil, true)
-	err := Dirwalk(&rootFile)
-	if err != nil {
-		return err
-	}
+	ch := make(chan FileInfo)
+	go Dirwalk(rootFile, ch)
 
 	w := bufio.NewWriter(os.Stdout)
-	_ = rootFile.Write(w)
+	for file := range ch {
+		err := file.Write(w)
+		if err != nil {
+			return err
+		}
+	}
 	w.Flush()
 	return nil
 }
 
-func Dirwalk(root FileInfo) error {
+func Dirwalk(root FileInfo, ch chan<- FileInfo) {
+	dirwalk(root, ch)
+	close(ch)
+}
+
+func dirwalk(root FileInfo, ch chan<- FileInfo) {
+	ch <- root
 	switch f := root.(type) {
 	case *File:
-		return nil
+		return
 	case *Folder:
 		files, err := ioutil.ReadDir(f.Path())
 		if err != nil {
-			return err
+			fmt.Println(err)
+			close(ch)
+			return
 		}
 
 		for i, file := range files {
@@ -73,22 +84,24 @@ func Dirwalk(root FileInfo) error {
 			}
 
 			isLast := i == len(files)-1
+			var child FileInfo
 			if file.IsDir() {
-				child := NewFolder(file.Name(), f, isLast)
-				Dirwalk(&child)
-				f.Children = append(f.Children, &child)
-				continue
+				child = NewFolder(file.Name(), f, isLast)
+			} else {
+				if file.Mode()&os.ModeSymlink != 0 {
+					sym, _ := os.Readlink(f.Path() + "/" + file.Name())
+					child = NewFile(file.Name(), f, isLast, sym)
+				} else {
+					child = NewFile(file.Name(), f, isLast, "")
+				}
 			}
 
-			child := NewFile(file.Name(), f, isLast)
-			if file.Mode()&os.ModeSymlink != 0 {
-				sym, _ := os.Readlink(f.Path() + "/" + file.Name())
-				child.SymLink = sym
-			}
-			f.Children = append(f.Children, &child)
+			f.Children = append(f.Children, child)
+			dirwalk(child, ch)
 		}
 	default:
-		return errors.New("Unexpected File type")
+		fmt.Println("Unexpected File type")
+		close(ch)
+		return
 	}
-	return nil
 }
