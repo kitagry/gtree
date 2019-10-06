@@ -10,18 +10,40 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+type ListOptions struct {
+	IsAll []bool `short:"a" long:"all" description:"All files are listed."`
+}
+
+type MiscellaneousOptions struct {
+	Version func() `long:"version" description:"show version"`
+}
+
 type Options struct {
-	IsAll []bool `short:"a" description:"All files are listed."`
+	ListOptions          *ListOptions          `group:"List Options"`
+	MiscellaneousOptions *MiscellaneousOptions `group:"Miscellaneous Options"`
 }
 
 var (
 	opts Options
 )
 
-func main() {
+func newOptionsParser(opt *Options) *flags.Parser {
+	opt.ListOptions = &ListOptions{}
+	opt.MiscellaneousOptions = &MiscellaneousOptions{}
+
+	opts.MiscellaneousOptions.Version = func() {
+		fmt.Println("gtree v0.0.0")
+		os.Exit(0)
+	}
+
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "[-a] [--] [<directory list>]"
+	parser.Usage = "[-a] [--version] [--] [<directory list>]"
+	return parser
+}
+
+func main() {
+	parser := newOptionsParser(&opts)
 
 	directories, err := parser.Parse()
 	if err != nil {
@@ -75,7 +97,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo) {
 		}
 
 		for i, file := range files {
-			if len(opts.IsAll) == 0 && strings.HasPrefix(file.Name(), ".") {
+			if len(opts.ListOptions.IsAll) == 0 && strings.HasPrefix(file.Name(), ".") {
 				continue
 			}
 
