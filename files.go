@@ -15,6 +15,11 @@ const (
 	TypeFolder Type = "FOLDER"
 )
 
+var (
+	folderColor = color.New(color.FgBlue)
+	symColor    = color.New(color.FgHiCyan)
+)
+
 type FileInfo interface {
 	Name() string
 	Type() Type
@@ -82,25 +87,19 @@ func (f *File) Write(w io.Writer) error {
 
 	switch v := f.parent.(type) {
 	case *Folder:
+		if f.IsLast() {
+			w.Write([]byte(v.ChildPrefix + "└── "))
+		} else {
+			w.Write([]byte(v.ChildPrefix + "├── "))
+		}
+
 		if f.IsSym() {
-			if f.IsLast() {
-				w.Write([]byte(v.ChildPrefix + "└── "))
-			} else {
-				w.Write([]byte(v.ChildPrefix + "├── "))
-			}
 			color.New(icon.Color).Fprint(w, icon.Icon+" ")
 			symColor.Fprint(w, f.Name())
 			w.Write([]byte(" -> " + f.SymLink + "\n"))
 		} else {
-			if f.IsLast() {
-				w.Write([]byte(v.ChildPrefix + "└── "))
-				color.New(icon.Color).Fprint(w, icon.Icon+" ")
-				w.Write([]byte(f.Name() + "\n"))
-			} else {
-				w.Write([]byte(v.ChildPrefix + "├── "))
-				color.New(icon.Color).Fprint(w, icon.Icon+" ")
-				w.Write([]byte(f.Name() + "\n"))
-			}
+			color.New(icon.Color).Fprint(w, icon.Icon+" ")
+			w.Write([]byte(f.Name() + "\n"))
 		}
 	default:
 		return errors.New("Unexpected parent type")
@@ -152,7 +151,7 @@ func (f *Folder) IsLast() bool {
 
 func (f *Folder) Write(w io.Writer) error {
 	if f.parent == nil {
-		w.Write([]byte(f.Name() + "\n"))
+		folderColor.Fprintln(w, f.Name())
 		return nil
 	}
 
@@ -160,13 +159,13 @@ func (f *Folder) Write(w io.Writer) error {
 	case *Folder:
 		if f.IsLast() {
 			w.Write([]byte(v.ChildPrefix + "└── "))
-			folderColor.Fprintln(w, f.Name())
 			f.ChildPrefix = v.ChildPrefix + "    "
 		} else {
 			w.Write([]byte(v.ChildPrefix + "├── "))
-			folderColor.Fprintln(w, f.Name())
 			f.ChildPrefix = v.ChildPrefix + "│   "
 		}
+
+		folderColor.Fprintln(w, f.Name())
 	default:
 		return errors.New("Unexpected parent type")
 	}

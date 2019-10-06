@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -17,15 +16,12 @@ type Options struct {
 
 var (
 	opts Options
-
-	folderColor = color.New(color.FgCyan)
-	symColor    = color.New(color.FgHiCyan)
 )
 
 func main() {
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "gtree [-a] [<directory list>]"
+	parser.Usage = "[-a] [--] [<directory list>]"
 
 	directories, err := parser.Parse()
 	if err != nil {
