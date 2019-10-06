@@ -25,7 +25,7 @@ type FileInfo interface {
 	Type() Type
 	Path() string
 	IsLast() bool
-	Write(w io.Writer) error
+	Write(w io.Writer, isFullPath bool) error
 }
 
 type File struct {
@@ -79,7 +79,7 @@ func (f *File) IsSym() bool {
 	return f.SymLink != ""
 }
 
-func (f *File) Write(w io.Writer) error {
+func (f *File) Write(w io.Writer, isFullPath bool) error {
 	icon, ok := icons[f.Suffix()]
 	if !ok {
 		icon = defaultFileIcon
@@ -95,11 +95,20 @@ func (f *File) Write(w io.Writer) error {
 
 		if f.IsSym() {
 			color.New(icon.Color).Fprint(w, icon.Icon+" ")
-			symColor.Fprint(w, f.Name())
+			if isFullPath {
+				symColor.Fprint(w, f.Path())
+			} else {
+				symColor.Fprint(w, f.Name())
+			}
+
 			w.Write([]byte(" -> " + f.SymLink + "\n"))
 		} else {
 			color.New(icon.Color).Fprint(w, icon.Icon+" ")
-			w.Write([]byte(f.Name() + "\n"))
+			if isFullPath {
+				w.Write([]byte(f.Path() + "\n"))
+			} else {
+				w.Write([]byte(f.Name() + "\n"))
+			}
 		}
 	default:
 		return errors.New("Unexpected parent type")
@@ -149,7 +158,7 @@ func (f *Folder) IsLast() bool {
 	return f.isLast
 }
 
-func (f *Folder) Write(w io.Writer) error {
+func (f *Folder) Write(w io.Writer, isFullPath bool) error {
 	if f.parent == nil {
 		folderColor.Fprintln(w, f.Name())
 		return nil
@@ -165,7 +174,11 @@ func (f *Folder) Write(w io.Writer) error {
 			f.ChildPrefix = v.ChildPrefix + "│   "
 		}
 
-		folderColor.Fprintln(w, f.Name())
+		if isFullPath {
+			folderColor.Fprintln(w, f.Path())
+		} else {
+			folderColor.Fprintln(w, f.Name())
+		}
 	default:
 		return errors.New("Unexpected parent type")
 	}
