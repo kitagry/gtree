@@ -37,6 +37,8 @@ type File struct {
 	SymLink string
 }
 
+var _ FileInfo = (*File)(nil)
+
 func NewFile(name string, parent FileInfo, isLast bool, symLink string) *File {
 	return &File{
 		name:    name,
@@ -110,6 +112,9 @@ func (f *File) Write(w io.Writer, isFullPath bool) error {
 				w.Write([]byte(f.Name() + "\n"))
 			}
 		}
+	case nil:
+		color.New(icon.Color).Fprint(w, icon.Icon+" ")
+		w.Write([]byte(f.Name() + "\n"))
 	default:
 		return errors.New("Unexpected parent type")
 	}
@@ -125,6 +130,8 @@ type Folder struct {
 
 	path string
 }
+
+var _ FileInfo = (*Folder)(nil)
 
 func NewFolder(name string, parent FileInfo, isLast bool) *Folder {
 	return &Folder{
