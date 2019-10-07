@@ -104,3 +104,77 @@ func TestFilesWrite(t *testing.T) {
 		}
 	}
 }
+
+func TestFolderPath(t *testing.T) {
+	inputs := []struct {
+		folder *Folder
+		expect string
+	}{
+		{NewFolder("test", nil, true), "test"},
+		{NewFolder("test", NewFolder("test1", nil, true), true), "test1/test"},
+		{
+			NewFolder("test", NewFolder("test2", NewFolder("test1", nil, true), true), true),
+			"test1/test2/test",
+		},
+	}
+
+	for _, in := range inputs {
+		if in.folder.Path() != in.expect {
+			t.Errorf("folder.Path() expected %s, but got %s", in.expect, in.folder.Path())
+		}
+	}
+
+}
+
+func TestFolderWrite(t *testing.T) {
+	parentFolder := NewFolder("test1", nil, true)
+	parentFolder.ChildPrefix = "│   "
+	inputs := []struct {
+		folder            *Folder
+		notFullPathExpect string
+		fullPathExpect    string
+		childPrefixExpect string
+	}{
+		{
+			NewFolder("test", nil, true),
+			folderColor.Sprintln("test"),
+			folderColor.Sprintln("test"),
+			"",
+		},
+		{
+			NewFolder("test", parentFolder, true),
+			parentFolder.ChildPrefix + "└── " + folderColor.Sprintln("test"),
+			parentFolder.ChildPrefix + "└── " + folderColor.Sprintln("test1/test"),
+			parentFolder.ChildPrefix + "    ",
+		},
+		{
+			NewFolder("test", parentFolder, false),
+			parentFolder.ChildPrefix + "├── " + folderColor.Sprintln("test"),
+			parentFolder.ChildPrefix + "├── " + folderColor.Sprintln("test1/test"),
+			parentFolder.ChildPrefix + "│   ",
+		},
+	}
+
+	for _, in := range inputs {
+		buffer := new(bytes.Buffer)
+		in.folder.Write(buffer, false)
+		if buffer.String() != in.notFullPathExpect {
+			t.Errorf("folder.Write() with not full path expected %s, but got %s", in.notFullPathExpect, buffer.String())
+		}
+
+		if in.folder.ChildPrefix != in.childPrefixExpect {
+			t.Errorf("folder.ChildPrefix path expected %s, but got %s", in.childPrefixExpect, in.folder.ChildPrefix)
+		}
+		in.folder.ChildPrefix = ""
+
+		buffer = new(bytes.Buffer)
+		in.folder.Write(buffer, true)
+		if buffer.String() != in.fullPathExpect {
+			t.Errorf("folder.Write() with not full path expected %s, but got %s", in.fullPathExpect, buffer.String())
+		}
+
+		if in.folder.ChildPrefix != in.childPrefixExpect {
+			t.Errorf("folder.ChildPrefix path expected %s, but got %s", in.childPrefixExpect, in.folder.ChildPrefix)
+		}
+	}
+}
