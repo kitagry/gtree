@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-func Dirwalk(root FileInfo, ch chan<- FileInfo) {
-	dirwalk(root, ch)
+func Dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
+	dirwalk(root, ch, listOptions)
 	close(ch)
 }
 
-func dirwalk(root FileInfo, ch chan<- FileInfo) {
+func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
 	ch <- root
 	switch f := root.(type) {
 	case *File:
@@ -25,7 +25,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo) {
 			return
 		}
 
-		if len(opts.ListOptions.OnlyDirectory) != 0 {
+		if len(listOptions.OnlyDirectory) != 0 {
 			tmp := make([]os.FileInfo, 0)
 			for _, f := range files {
 				if f.IsDir() {
@@ -36,7 +36,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo) {
 		}
 
 		for i, file := range files {
-			if len(opts.ListOptions.IsAll) == 0 && strings.HasPrefix(file.Name(), ".") {
+			if len(listOptions.IsAll) == 0 && strings.HasPrefix(file.Name(), ".") {
 				continue
 			}
 
@@ -54,7 +54,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo) {
 			}
 
 			f.Children = append(f.Children, child)
-			dirwalk(child, ch)
+			dirwalk(child, ch, listOptions)
 		}
 	default:
 		fmt.Println("Unexpected File type")

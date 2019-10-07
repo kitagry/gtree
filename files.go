@@ -20,11 +20,23 @@ var (
 	symColor    = color.New(color.FgHiCyan)
 )
 
+// FileInfo is interface for file and folder.
 type FileInfo interface {
+	// Name returns File name or Folder name.
 	Name() string
+
+	// Type returns Type file or folder.
 	Type() Type
+
+	// Path returns relative path from file tree's root.
 	Path() string
+
+	// IsLast is true when FileInfo is last child of parent's children.
+	// This will use to display tree.
 	IsLast() bool
+
+	// Write output to io.Writer.
+	// If isFullPath is true, Write output fileInfo.Path()
 	Write(w io.Writer, isFullPath bool) error
 }
 
@@ -89,32 +101,53 @@ func (f *File) Write(w io.Writer, isFullPath bool) error {
 
 	switch v := f.parent.(type) {
 	case *Folder:
+		var err error
 		if f.IsLast() {
-			w.Write([]byte(v.ChildPrefix + "└── "))
+			_, err = w.Write([]byte(v.ChildPrefix + "└── "))
 		} else {
-			w.Write([]byte(v.ChildPrefix + "├── "))
+			_, err = w.Write([]byte(v.ChildPrefix + "├── "))
+		}
+
+		if err != nil {
+			return err
 		}
 
 		if f.IsSym() {
 			color.New(icon.Color).Fprint(w, icon.Icon+" ")
+			var err error
 			if isFullPath {
-				symColor.Fprint(w, f.Path())
+				_, err = symColor.Fprint(w, f.Path())
 			} else {
-				symColor.Fprint(w, f.Name())
+				_, err = symColor.Fprint(w, f.Name())
 			}
 
-			w.Write([]byte(" -> " + f.SymLink + "\n"))
+			if err != nil {
+				return err
+			}
+
+			_, err = w.Write([]byte(" -> " + f.SymLink + "\n"))
+			if err != nil {
+				return err
+			}
 		} else {
 			color.New(icon.Color).Fprint(w, icon.Icon+" ")
+			var err error
 			if isFullPath {
-				w.Write([]byte(f.Path() + "\n"))
+				_, err = w.Write([]byte(f.Path() + "\n"))
 			} else {
-				w.Write([]byte(f.Name() + "\n"))
+				_, err = w.Write([]byte(f.Name() + "\n"))
+			}
+
+			if err != nil {
+				return err
 			}
 		}
 	case nil:
 		color.New(icon.Color).Fprint(w, icon.Icon+" ")
-		w.Write([]byte(f.Name() + "\n"))
+		_, err := w.Write([]byte(f.Name() + "\n"))
+		if err != nil {
+			return err
+		}
 	default:
 		return errors.New("Unexpected parent type")
 	}
@@ -167,24 +200,33 @@ func (f *Folder) IsLast() bool {
 
 func (f *Folder) Write(w io.Writer, isFullPath bool) error {
 	if f.parent == nil {
-		folderColor.Fprintln(w, f.Name())
-		return nil
+		_, err := folderColor.Fprintln(w, f.Name())
+		return err
 	}
 
 	switch v := f.parent.(type) {
 	case *Folder:
+		var err error
 		if f.IsLast() {
-			w.Write([]byte(v.ChildPrefix + "└── "))
+			_, err = w.Write([]byte(v.ChildPrefix + "└── "))
 			f.ChildPrefix = v.ChildPrefix + "    "
 		} else {
-			w.Write([]byte(v.ChildPrefix + "├── "))
+			_, err = w.Write([]byte(v.ChildPrefix + "├── "))
 			f.ChildPrefix = v.ChildPrefix + "│   "
 		}
 
+		if err != nil {
+			return err
+		}
+
 		if isFullPath {
-			folderColor.Fprintln(w, f.Path())
+			_, err = folderColor.Fprintln(w, f.Path())
 		} else {
-			folderColor.Fprintln(w, f.Name())
+			_, err = folderColor.Fprintln(w, f.Name())
+		}
+
+		if err != nil {
+			return err
 		}
 	default:
 		return errors.New("Unexpected parent type")

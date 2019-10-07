@@ -92,13 +92,21 @@ func TestFilesWrite(t *testing.T) {
 
 	for _, in := range inputs {
 		buffer := new(bytes.Buffer)
-		in.file.Write(buffer, false)
+		err := in.file.Write(buffer, false)
+		if err != nil {
+			t.Errorf("file.Write error %v", err)
+		}
+
 		if buffer.String() != in.notFullPathExpect {
 			t.Errorf("file.Write() with not full path expected %s, but got %s", in.notFullPathExpect, buffer.String())
 		}
 
 		buffer = new(bytes.Buffer)
-		in.file.Write(buffer, true)
+		err = in.file.Write(buffer, true)
+		if err != nil {
+			t.Errorf("file.Write error %v", err)
+		}
+
 		if buffer.String() != in.fullPathExpect {
 			t.Errorf("file.Write() with full path expected %s, but got %s", in.fullPathExpect, buffer.String())
 		}
@@ -157,7 +165,11 @@ func TestFolderWrite(t *testing.T) {
 
 	for _, in := range inputs {
 		buffer := new(bytes.Buffer)
-		in.folder.Write(buffer, false)
+		err := in.folder.Write(buffer, false)
+		if err != nil {
+			t.Errorf("folder.Write error: %v", err)
+		}
+
 		if buffer.String() != in.notFullPathExpect {
 			t.Errorf("folder.Write() with not full path expected %s, but got %s", in.notFullPathExpect, buffer.String())
 		}
@@ -168,7 +180,11 @@ func TestFolderWrite(t *testing.T) {
 		in.folder.ChildPrefix = ""
 
 		buffer = new(bytes.Buffer)
-		in.folder.Write(buffer, true)
+		err = in.folder.Write(buffer, true)
+		if err != nil {
+			t.Errorf("folder.Write error: %v", err)
+		}
+
 		if buffer.String() != in.fullPathExpect {
 			t.Errorf("folder.Write() with not full path expected %s, but got %s", in.fullPathExpect, buffer.String())
 		}

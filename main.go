@@ -8,11 +8,24 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+// ListOptions is Options for basic gtree command.
 type ListOptions struct {
+	// ListSearchOptions is options which use when searching file tree.
+	ListSearchOptions *ListSearchOptions
+
+	// ListDisplayOptions is options which use when display file tree.
+	ListDisplayOptions *ListDisplayOptions
+}
+
+// ListSearchOptions is options which use when searching file tree.
+type ListSearchOptions struct {
 	IsAll []bool `short:"a" long:"all" description:"All files are listed."`
 
 	OnlyDirectory []bool `short:"d" description:"List directories only."`
+}
 
+// ListDisplayOptions is options which use when display file tree.
+type ListDisplayOptions struct {
 	FullPath []bool `short:"f" description:"Print the full path prefix for each file."`
 }
 
@@ -20,6 +33,7 @@ type MiscellaneousOptions struct {
 	Version func() `long:"version" description:"show version"`
 }
 
+// Options is all options.
 type Options struct {
 	ListOptions          *ListOptions          `group:"List Options"`
 	MiscellaneousOptions *MiscellaneousOptions `group:"Miscellaneous Options"`
@@ -64,15 +78,21 @@ func main() {
 	}
 }
 
+// Run is to search files, and display these files.
+// Search and Display communicate through channel.
 func Run(root string) error {
 	rootFile := NewFolder(root, nil, true)
 	ch := make(chan FileInfo)
-	go Dirwalk(rootFile, ch)
 
+	// Search files.
+	go Dirwalk(rootFile, ch, opts.ListOptions.ListSearchOptions)
+
+	// Display files.
 	w := bufio.NewWriter(os.Stdout)
 	for file := range ch {
-		err := file.Write(w, len(opts.ListOptions.FullPath) != 0)
+		err := file.Write(w, len(opts.ListOptions.ListDisplayOptions.FullPath) != 0)
 		if err != nil {
+			w.Flush()
 			return err
 		}
 	}
