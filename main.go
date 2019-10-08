@@ -26,10 +26,12 @@ type ListSearchOptions struct {
 	OnlyDirectory []bool `short:"d" description:"List directories only."`
 }
 
+// IsAll returns true, if user specify '-a' or '-all' option.
 func (l *ListSearchOptions) IsAll() bool {
 	return len(l.All) != 0
 }
 
+// IsOnlyDirectry returns true, if user specify '-d' option.
 func (l *ListSearchOptions) IsOnlyDirectry() bool {
 	return len(l.OnlyDirectory) != 0
 }
@@ -39,6 +41,11 @@ type ListDisplayOptions struct {
 	FullPath []bool `short:"f" description:"Print the full path prefix for each file."`
 
 	Output string `short:"o" description:"Output to file instead of stdout."`
+}
+
+// IsFullPath returns true, if user specify '-f' option.
+func (l *ListDisplayOptions) IsFullPath() bool {
+	return len(l.FullPath) != 0
 }
 
 type MiscellaneousOptions struct {
@@ -105,29 +112,26 @@ func Run(root string) error {
 		var err error
 		if _, err = os.Stat(outputFile); !os.IsNotExist(err) {
 			fmt.Printf("Output file already exists. Are you sure to overwrite %s?[Y/n] ", outputFile)
+
 			var answer string
 			fmt.Scan(&answer)
 			if strings.ToLower(strings.TrimRight(answer, "\n")) != "y" {
 				return fmt.Errorf("Output file already exists.")
 			}
-
-			out, err = os.Create(outputFile)
-			if err != nil {
-				return fmt.Errorf("File open error: %v", err)
-			}
-		} else {
-			out, err = os.Create(outputFile)
-			if err != nil {
-				return fmt.Errorf("File create error: %v", err)
-			}
 		}
+
+		out, err = os.Create(outputFile)
+		if err != nil {
+			return fmt.Errorf("File create/open error: %v", err)
+		}
+		defer out.(*os.File).Close()
 	} else {
 		out = os.Stdout
 	}
 
 	w := bufio.NewWriter(out)
 	for file := range ch {
-		err := file.Write(w, len(opts.ListOptions.ListDisplayOptions.FullPath) != 0)
+		err := file.Write(w, opts.ListOptions.ListDisplayOptions.IsFullPath())
 		if err != nil {
 			w.Flush()
 			return err
