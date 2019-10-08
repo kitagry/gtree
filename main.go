@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -35,6 +37,8 @@ func (l *ListSearchOptions) IsOnlyDirectry() bool {
 // ListDisplayOptions is options which use when display file tree.
 type ListDisplayOptions struct {
 	FullPath []bool `short:"f" description:"Print the full path prefix for each file."`
+
+	Output string `short:"o" description:"Output to file instead of stdout."`
 }
 
 type MiscellaneousOptions struct {
@@ -62,7 +66,7 @@ func newOptionsParser(opt *Options) *flags.Parser {
 
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "[-adf] [--version] [--help] [--] [<directory list>]"
+	parser.Usage = "[-adf] [--version] [-o filename] [--help] [--] [<directory list>]"
 	return parser
 }
 
@@ -96,7 +100,32 @@ func Run(root string) error {
 	go Dirwalk(rootFile, ch, opts.ListOptions.ListSearchOptions)
 
 	// Display files.
-	w := bufio.NewWriter(os.Stdout)
+	var out io.Writer
+	if outputFile := opts.ListOptions.ListDisplayOptions.Output; outputFile != "" {
+		var err error
+		if _, err = os.Stat(outputFile); !os.IsNotExist(err) {
+			fmt.Printf("Output file already exists. Are you sure to overwrite %s?[Y/n] ", outputFile)
+			var answer string
+			fmt.Scan(&answer)
+			if strings.ToLower(strings.TrimRight(answer, "\n")) != "y" {
+				return fmt.Errorf("Output file already exists.")
+			}
+
+			out, err = os.Create(outputFile)
+			if err != nil {
+				return fmt.Errorf("File open error: %v", err)
+			}
+		} else {
+			out, err = os.Create(outputFile)
+			if err != nil {
+				return fmt.Errorf("File create error: %v", err)
+			}
+		}
+	} else {
+		out = os.Stdout
+	}
+
+	w := bufio.NewWriter(out)
 	for file := range ch {
 		err := file.Write(w, len(opts.ListOptions.ListDisplayOptions.FullPath) != 0)
 		if err != nil {
