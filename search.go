@@ -25,7 +25,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 			return
 		}
 
-		if len(listOptions.OnlyDirectory) != 0 {
+		if listOptions.IsOnlyDirectry() {
 			tmp := make([]os.FileInfo, 0)
 			for _, f := range files {
 				if f.IsDir() {
@@ -36,7 +36,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 		}
 
 		for i, file := range files {
-			if len(listOptions.IsAll) == 0 && strings.HasPrefix(file.Name(), ".") {
+			if !listOptions.IsAll() && strings.HasPrefix(file.Name(), ".") {
 				continue
 			}
 

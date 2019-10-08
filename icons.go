@@ -12,7 +12,7 @@ var defaultFileIcon = Icon{
 	Color: color.FgWhite,
 }
 
-var icons map[string]Icon = map[string]Icon{
+var icons = map[string]Icon{
 	"styl":     Icon{Icon: "", Color: color.FgGreen},
 	"sass":     Icon{Icon: "", Color: color.FgWhite},
 	"scss":     Icon{Icon: "", Color: color.FgMagenta},

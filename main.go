@@ -19,9 +19,17 @@ type ListOptions struct {
 
 // ListSearchOptions is options which use when searching file tree.
 type ListSearchOptions struct {
-	IsAll []bool `short:"a" long:"all" description:"All files are listed."`
+	All []bool `short:"a" long:"all" description:"All files are listed."`
 
 	OnlyDirectory []bool `short:"d" description:"List directories only."`
+}
+
+func (l *ListSearchOptions) IsAll() bool {
+	return len(l.All) != 0
+}
+
+func (l *ListSearchOptions) IsOnlyDirectry() bool {
+	return len(l.OnlyDirectory) != 0
 }
 
 // ListDisplayOptions is options which use when display file tree.
