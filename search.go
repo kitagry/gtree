@@ -5,42 +5,40 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
+)
+
+var (
+	once sync.Once
 )
 
 func Dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
 	dirwalk(root, ch, listOptions)
-	close(ch)
+	once.Do(func() {
+		close(ch)
+	})
 }
 
 func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
-	ch <- root
 	switch f := root.(type) {
 	case *File:
+		ch <- f
 		return
 	case *Folder:
 		files, err := ioutil.ReadDir(f.Path())
 		if err != nil {
-			fmt.Println(err)
-			close(ch)
+			// Set error, but display this folder.
+			f.SetError(err)
+			ch <- f
 			return
 		}
+		ch <- f
 
-		if listOptions.IsOnlyDirectry() {
-			tmp := make([]os.FileInfo, 0)
-			for _, f := range files {
-				if f.IsDir() {
-					tmp = append(tmp, f)
-				}
-			}
-			files = tmp
-		}
+		files = filterFiles(files, listOptions)
 
 		for i, file := range files {
-			if !listOptions.IsAll() && strings.HasPrefix(file.Name(), ".") {
-				continue
-			}
-
 			isLast := i == len(files)-1
+
 			var child FileInfo
 			if file.IsDir() {
 				child = NewFolder(file.Name(), f, isLast)
@@ -57,8 +55,27 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 			dirwalk(child, ch, listOptions)
 		}
 	default:
-		fmt.Println("Unexpected File type")
-		close(ch)
+		once.Do(func() {
+			fmt.Println("Unexpected File type")
+			close(ch)
+		})
 		return
 	}
+}
+
+// Remove files which don't satisfy options.
+func filterFiles(files []os.FileInfo, opts *ListSearchOptions) []os.FileInfo {
+	result := make([]os.FileInfo, 0)
+	for _, f := range files {
+		if opts.IsOnlyDirectry() && !f.IsDir() {
+			continue
+		}
+
+		if !opts.IsAll() && strings.HasPrefix(f.Name(), ".") {
+			continue
+		}
+
+		result = append(result, f)
+	}
+	return result
 }

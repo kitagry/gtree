@@ -8,13 +8,6 @@ import (
 	"github.com/fatih/color"
 )
 
-type Type string
-
-const (
-	TypeFile   Type = "FILE"
-	TypeFolder Type = "FOLDER"
-)
-
 var (
 	folderColor = color.New(color.FgBlue)
 	symColor    = color.New(color.FgHiCyan)
@@ -24,9 +17,6 @@ var (
 type FileInfo interface {
 	// Name returns File name or Folder name.
 	Name() string
-
-	// Type returns Type file or folder.
-	Type() Type
 
 	// Path returns relative path from file tree's root.
 	Path() string
@@ -67,10 +57,6 @@ func (f *File) Name() string {
 func (f *File) Suffix() string {
 	n := strings.Split(f.name, ".")
 	return n[len(n)-1]
-}
-
-func (f *File) Type() Type {
-	return TypeFile
 }
 
 func (f *File) Path() string {
@@ -162,6 +148,7 @@ type Folder struct {
 	isLast      bool
 
 	path string
+	err  error
 }
 
 var _ FileInfo = (*Folder)(nil)
@@ -175,19 +162,18 @@ func NewFolder(name string, parent FileInfo, isLast bool) *Folder {
 }
 
 func (f *Folder) Name() string {
+	if f.err != nil {
+		return f.name + " [" + f.err.Error() + "]"
+	}
 	return f.name
-}
-
-func (f *Folder) Type() Type {
-	return TypeFolder
 }
 
 func (f *Folder) Path() string {
 	if f.path == "" {
 		if f.parent == nil {
-			f.path = f.name
+			f.path = f.Name()
 		} else {
-			f.path = f.parent.Path() + "/" + f.name
+			f.path = f.parent.Path() + "/" + f.Name()
 		}
 	}
 
@@ -196,6 +182,10 @@ func (f *Folder) Path() string {
 
 func (f *Folder) IsLast() bool {
 	return f.isLast
+}
+
+func (f *Folder) SetError(err error) {
+	f.err = err
 }
 
 func (f *Folder) Write(w io.Writer, isFullPath bool) error {
