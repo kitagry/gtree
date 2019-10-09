@@ -162,9 +162,6 @@ func NewFolder(name string, parent FileInfo, isLast bool) *Folder {
 }
 
 func (f *Folder) Name() string {
-	if f.err != nil {
-		return f.name + " [" + f.err.Error() + "]"
-	}
 	return f.name
 }
 
@@ -186,6 +183,20 @@ func (f *Folder) IsLast() bool {
 
 func (f *Folder) SetError(err error) {
 	f.err = err
+}
+
+func (f *Folder) displayName() string {
+	if f.err != nil {
+		return f.Name() + " [" + f.err.Error() + "]"
+	}
+	return f.Name()
+}
+
+func (f *Folder) displayPath() string {
+	if f.err != nil {
+		return f.Path() + " [" + f.err.Error() + "]"
+	}
+	return f.Path()
 }
 
 func (f *Folder) Write(w io.Writer, isFullPath bool) error {
@@ -210,9 +221,9 @@ func (f *Folder) Write(w io.Writer, isFullPath bool) error {
 		}
 
 		if isFullPath {
-			_, err = folderColor.Fprintln(w, f.Path())
+			_, err = folderColor.Fprintln(w, f.displayPath())
 		} else {
-			_, err = folderColor.Fprintln(w, f.Name())
+			_, err = folderColor.Fprintln(w, f.displayName())
 		}
 
 		if err != nil {
