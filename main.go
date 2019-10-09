@@ -67,7 +67,7 @@ func newOptionsParser(opt *Options) *flags.Parser {
 	opt.MiscellaneousOptions = &MiscellaneousOptions{}
 
 	opts.MiscellaneousOptions.Version = func() {
-		fmt.Println("gtree v0.0.0")
+		fmt.Println("gtree v0.1")
 		os.Exit(0)
 	}
 
