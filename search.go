@@ -5,32 +5,27 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"sync"
-)
-
-var (
-	once sync.Once
 )
 
 func Dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
-	dirwalk(root, ch, listOptions)
-	once.Do(func() {
-		close(ch)
-	})
+	err := dirwalk(root, ch, listOptions)
+	if err != nil {
+		fmt.Println(err)
+	}
+	close(ch)
 }
 
-func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
+func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) error {
 	switch f := root.(type) {
 	case *File:
 		ch <- f
-		return
 	case *Folder:
 		files, err := ioutil.ReadDir(f.Path())
 		if err != nil {
 			// Set error, but display this folder.
 			f.SetError(err)
 			ch <- f
-			return
+			return nil
 		}
 		ch <- f
 
@@ -52,15 +47,15 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 			}
 
 			f.Children = append(f.Children, child)
-			dirwalk(child, ch, listOptions)
+			err = dirwalk(child, ch, listOptions)
+			if err != nil {
+				return err
+			}
 		}
 	default:
-		once.Do(func() {
-			fmt.Println("Unexpected File type")
-			close(ch)
-		})
-		return
+		return fmt.Errorf("Unexpected File type")
 	}
+	return nil
 }
 
 // Remove files which don't satisfy options.
