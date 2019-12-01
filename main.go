@@ -116,13 +116,13 @@ func Run(root string) error {
 			var answer string
 			fmt.Scan(&answer)
 			if strings.ToLower(strings.TrimRight(answer, "\n")) != "y" {
-				return fmt.Errorf("Output file already exists.")
+				return fmt.Errorf("output file already exists")
 			}
 		}
 
 		out, err = os.Create(outputFile)
 		if err != nil {
-			return fmt.Errorf("File create/open error: %v", err)
+			return fmt.Errorf("file create/open error: %v", err)
 		}
 		defer out.(*os.File).Close()
 	} else {

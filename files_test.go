@@ -12,8 +12,8 @@ func TestFileSuffix(t *testing.T) {
 		file   *File
 		expect string
 	}{
+		{NewFile("readme", nil, false, ""), "readme"},
 		{NewFile("test.go", nil, false, ""), "go"},
-		{NewFile("test.rb", nil, false, ""), "rb"},
 		{NewFile("test.html.erb", nil, false, ""), "erb"},
 	}
 
@@ -43,7 +43,7 @@ func TestFilesPath(t *testing.T) {
 
 	for _, input := range inputs {
 		if input.file.Path() != input.expect {
-			t.Errorf("file.Suffix() expected %s, but got %s", input.expect, input.file.Path())
+			t.Errorf("file.Path() expected %s, but got %s", input.expect, input.file.Path())
 		}
 	}
 }
