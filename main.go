@@ -24,6 +24,8 @@ type ListSearchOptions struct {
 	All []bool `short:"a" long:"all" description:"All files are listed."`
 
 	OnlyDirectory []bool `short:"d" description:"List directories only."`
+
+	IgnorePattern string `short:"I" description:"Do not list files that match the given pattern."`
 }
 
 // IsAll returns true, if user specify '-a' or '-all' option.

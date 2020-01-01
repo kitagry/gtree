@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -56,6 +57,13 @@ func (d *dummyFileInfo) ModTime() time.Time {
 	return time.Now()
 }
 
+func (d *dummyFileInfo) String() string {
+	if d.IsDir() {
+		return fmt.Sprintf("Folder(%s)", d.Name())
+	}
+	return fmt.Sprintf("File(%s)", d.Name())
+}
+
 func TestFilterFiles(t *testing.T) {
 	files := []os.FileInfo{
 		newDummyFileInfo("file", false, false),
@@ -76,6 +84,7 @@ func TestFilterFiles(t *testing.T) {
 			&ListSearchOptions{
 				All:           []bool{},
 				OnlyDirectory: []bool{},
+				IgnorePattern: "",
 			},
 			[]os.FileInfo{
 				newDummyFileInfo("file", false, false),
@@ -88,6 +97,7 @@ func TestFilterFiles(t *testing.T) {
 			&ListSearchOptions{
 				All:           []bool{true},
 				OnlyDirectory: []bool{},
+				IgnorePattern: "",
 			},
 			[]os.FileInfo{
 				newDummyFileInfo("file", false, false),
@@ -104,6 +114,7 @@ func TestFilterFiles(t *testing.T) {
 			&ListSearchOptions{
 				All:           []bool{},
 				OnlyDirectory: []bool{true},
+				IgnorePattern: "",
 			},
 			[]os.FileInfo{
 				newDummyFileInfo("folder", true, false),
@@ -114,6 +125,7 @@ func TestFilterFiles(t *testing.T) {
 			&ListSearchOptions{
 				All:           []bool{true},
 				OnlyDirectory: []bool{true},
+				IgnorePattern: "",
 			},
 			[]os.FileInfo{
 				newDummyFileInfo("folder", true, false),
@@ -122,12 +134,24 @@ func TestFilterFiles(t *testing.T) {
 				newDummyFileInfo(".sym-dotfolder", true, true),
 			},
 		},
+		{
+			&ListSearchOptions{
+				All:           []bool{true},
+				OnlyDirectory: []bool{true},
+				IgnorePattern: "folder",
+			},
+			[]os.FileInfo{
+				newDummyFileInfo("sym-folder", true, true),
+				newDummyFileInfo(".dotfolder", true, false),
+				newDummyFileInfo(".sym-dotfolder", true, true),
+			},
+		},
 	}
 
-	for _, in := range inputs {
+	for i, in := range inputs {
 		res := filterFiles(files, in.opts)
 		if !reflect.DeepEqual(res, in.result) {
-			t.Errorf("filterFiles number expected %d, got %d", len(in.result), len(res))
+			t.Errorf("%d: filterFiles number expected %v, got %v", i, in.result, res)
 		}
 	}
 
