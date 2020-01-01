@@ -62,6 +62,10 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 func filterFiles(files []os.FileInfo, opts *ListSearchOptions) []os.FileInfo {
 	result := make([]os.FileInfo, 0)
 	for _, f := range files {
+		if opts.IgnorePattern == f.Name() {
+			continue
+		}
+
 		if opts.IsOnlyDirectry() && !f.IsDir() {
 			continue
 		}
