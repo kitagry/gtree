@@ -9,3 +9,7 @@ env:
   - GO111MODULE=on
 
 script: go test
+
+branches:
+  only:
+    - master
