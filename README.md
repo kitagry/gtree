@@ -4,6 +4,10 @@ tree command with icons.
 
 ![sample image](./images/sample.png)
 
+## Requirements
+
+[Nerd Fonts](https://www.nerdfonts.com/) or related fonts.
+
 ## Installation
 
 ```
