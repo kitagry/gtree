@@ -69,13 +69,13 @@ func newOptionsParser(opt *Options) *flags.Parser {
 	opt.MiscellaneousOptions = &MiscellaneousOptions{}
 
 	opts.MiscellaneousOptions.Version = func() {
-		fmt.Println("gtree v0.1")
+		fmt.Println("gtree v0.2")
 		os.Exit(0)
 	}
 
 	parser := flags.NewParser(&opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "[-adf] [--version] [-o filename] [--help] [--] [<directory list>]"
+	parser.Usage = "[-adf] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]"
 	return parser
 }
 
