@@ -1,44 +1,89 @@
 package main
 
 import (
-	"bytes"
+	"os"
 	"testing"
-
-	"github.com/fatih/color"
+	"time"
 )
 
+type dummyOsFile struct {
+	name  string
+	isDir bool
+	isSym bool
+}
+
+func newDummyOsFile(name string, isDir bool, isSym bool) os.FileInfo {
+	return &dummyOsFile{
+		name:  name,
+		isDir: isDir,
+		isSym: isSym,
+	}
+}
+
+func (f *dummyOsFile) Name() string {
+	return f.name
+}
+
+func (f *dummyOsFile) Size() int64 {
+	panic("not implemented")
+}
+
+func (f *dummyOsFile) Mode() os.FileMode {
+	if f.isSym {
+		return os.ModeSymlink
+	}
+	return os.ModeDir
+}
+
+func (f *dummyOsFile) ModTime() time.Time {
+	panic("not implemented")
+}
+
+func (f *dummyOsFile) IsDir() bool {
+	return f.isDir
+}
+
+func (f *dummyOsFile) Sys() interface{} {
+	panic("not implemented")
+}
+
 func TestFileSuffix(t *testing.T) {
+	fi1, _ := NewFileInfo(newDummyOsFile("readme", false, false), nil, false)
+	fi2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
+	fi3, _ := NewFileInfo(newDummyOsFile("test.html.erb", false, false), nil, false)
 	inputs := []struct {
-		file   *File
+		file   FileInfo
 		expect string
 	}{
-		{NewFile("readme", nil, false, ""), "readme"},
-		{NewFile("test.go", nil, false, ""), "go"},
-		{NewFile("test.html.erb", nil, false, ""), "erb"},
+		{fi1, "readme"},
+		{fi2, "go"},
+		{fi3, "erb"},
 	}
 
 	for _, input := range inputs {
-		if input.file.Suffix() != input.expect {
-			t.Errorf("file.Suffix() expected %s, but got %s", input.expect, input.file.Suffix())
+		if input.file.FileType() != input.expect {
+			t.Errorf("file.FileType() expected %s, but got %s", input.expect, input.file.(*file).FileType())
 		}
 	}
 }
 
 func TestFilesPath(t *testing.T) {
+	d1, _ := NewFileInfo(newDummyOsFile("test1", true, false), nil, false)
+	d2, _ := NewFileInfo(newDummyOsFile("test2", true, false), d1, false)
+	// test.go
+	fi1, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
+	// test1 -> test.go
+	fi2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), d1, false)
+	// test1 -> test2 -> test.go
+	fi3, _ := NewFileInfo(newDummyOsFile("test.go", false, false), d2, false)
+
 	inputs := []struct {
-		file   *File
+		file   FileInfo
 		expect string
 	}{
-		{NewFile("test.go", nil, false, ""), "test.go"},
-		{NewFile("test.go", NewFolder("test", nil, false), false, ""), "test/test.go"},
-		{
-			NewFile("test.go",
-				NewFolder("test2",
-					NewFolder("test1", nil, false),
-					false),
-				false, ""),
-			"test1/test2/test.go",
-		},
+		{fi1, "test.go"},
+		{fi2, "test1/test.go"},
+		{fi3, "test1/test2/test.go"},
 	}
 
 	for _, input := range inputs {
@@ -48,149 +93,27 @@ func TestFilesPath(t *testing.T) {
 	}
 }
 
-func TestFilesWrite(t *testing.T) {
-	goicon, ok := icons["go"]
-	if !ok {
-		t.Errorf("Go icon is not present")
-		return
-	}
-	goiconString := color.New(goicon.Color).Sprint(goicon.Icon + " ")
-
-	folder := NewFolder("test", nil, false)
-	folder.ChildPrefix = "│   "
-	inputs := []struct {
-		file              *File
-		notFullPathExpect string
-		fullPathExpect    string
-	}{
-		{
-			NewFile("test.go", nil, false, ""),
-			goiconString + "test.go\n",
-			goiconString + "test.go\n",
-		},
-		{
-			NewFile("test.go", NewFolder("test", nil, false), false, ""),
-			"├── " + goiconString + "test.go\n",
-			"├── " + goiconString + "test/test.go\n",
-		},
-		{
-			NewFile("test.go", NewFolder("test", nil, false), true, ""),
-			"└── " + goiconString + "test.go\n",
-			"└── " + goiconString + "test/test.go\n",
-		},
-		{
-			NewFile("test.go", folder, false, ""),
-			"│   ├── " + goiconString + "test.go\n",
-			"│   ├── " + goiconString + "test/test.go\n",
-		},
-		{
-			NewFile("test.go", NewFolder("test", nil, false), false, "/test/test/test.go"),
-			"├── " + goiconString + symColor.Sprint("test.go") + " -> /test/test/test.go\n",
-			"├── " + goiconString + symColor.Sprint("test/test.go") + " -> /test/test/test.go\n",
-		},
-	}
-
-	for _, in := range inputs {
-		buffer := new(bytes.Buffer)
-		err := in.file.Write(buffer, false)
-		if err != nil {
-			t.Errorf("file.Write error %v", err)
-		}
-
-		if buffer.String() != in.notFullPathExpect {
-			t.Errorf("file.Write() with not full path expected %s, but got %s", in.notFullPathExpect, buffer.String())
-		}
-
-		buffer = new(bytes.Buffer)
-		err = in.file.Write(buffer, true)
-		if err != nil {
-			t.Errorf("file.Write error %v", err)
-		}
-
-		if buffer.String() != in.fullPathExpect {
-			t.Errorf("file.Write() with full path expected %s, but got %s", in.fullPathExpect, buffer.String())
-		}
-	}
-}
-
 func TestFolderPath(t *testing.T) {
+	d1, _ := NewFileInfo(newDummyOsFile("test1", true, false), nil, false)
+	d2, _ := NewFileInfo(newDummyOsFile("test2", true, false), d1, false)
+	// test
+	r1, _ := NewFileInfo(newDummyOsFile("test", true, false), nil, false)
+	// test1 -> test
+	r2, _ := NewFileInfo(newDummyOsFile("test", true, false), d1, false)
+	// test1 -> test
+	r3, _ := NewFileInfo(newDummyOsFile("test", true, false), d2, false)
 	inputs := []struct {
-		folder *Folder
+		folder FileInfo
 		expect string
 	}{
-		{NewFolder("test", nil, true), "test"},
-		{NewFolder("test", NewFolder("test1", nil, true), true), "test1/test"},
-		{
-			NewFolder("test", NewFolder("test2", NewFolder("test1", nil, true), true), true),
-			"test1/test2/test",
-		},
+		{r1, "test"},
+		{r2, "test1/test"},
+		{r3, "test1/test2/test"},
 	}
 
 	for _, in := range inputs {
 		if in.folder.Path() != in.expect {
 			t.Errorf("folder.Path() expected %s, but got %s", in.expect, in.folder.Path())
-		}
-	}
-
-}
-
-func TestFolderWrite(t *testing.T) {
-	parentFolder := NewFolder("test1", nil, true)
-	parentFolder.ChildPrefix = "│   "
-	inputs := []struct {
-		folder            *Folder
-		notFullPathExpect string
-		fullPathExpect    string
-		childPrefixExpect string
-	}{
-		{
-			NewFolder("test", nil, true),
-			folderColor.Sprintln("test"),
-			folderColor.Sprintln("test"),
-			"",
-		},
-		{
-			NewFolder("test", parentFolder, true),
-			parentFolder.ChildPrefix + "└── " + folderColor.Sprintln("test"),
-			parentFolder.ChildPrefix + "└── " + folderColor.Sprintln("test1/test"),
-			parentFolder.ChildPrefix + "    ",
-		},
-		{
-			NewFolder("test", parentFolder, false),
-			parentFolder.ChildPrefix + "├── " + folderColor.Sprintln("test"),
-			parentFolder.ChildPrefix + "├── " + folderColor.Sprintln("test1/test"),
-			parentFolder.ChildPrefix + "│   ",
-		},
-	}
-
-	for _, in := range inputs {
-		buffer := new(bytes.Buffer)
-		err := in.folder.Write(buffer, false)
-		if err != nil {
-			t.Errorf("folder.Write error: %v", err)
-		}
-
-		if buffer.String() != in.notFullPathExpect {
-			t.Errorf("folder.Write() with not full path expected %s, but got %s", in.notFullPathExpect, buffer.String())
-		}
-
-		if in.folder.ChildPrefix != in.childPrefixExpect {
-			t.Errorf("folder.ChildPrefix path expected %s, but got %s", in.childPrefixExpect, in.folder.ChildPrefix)
-		}
-		in.folder.ChildPrefix = ""
-
-		buffer = new(bytes.Buffer)
-		err = in.folder.Write(buffer, true)
-		if err != nil {
-			t.Errorf("folder.Write error: %v", err)
-		}
-
-		if buffer.String() != in.fullPathExpect {
-			t.Errorf("folder.Write() with not full path expected %s, but got %s", in.fullPathExpect, buffer.String())
-		}
-
-		if in.folder.ChildPrefix != in.childPrefixExpect {
-			t.Errorf("folder.ChildPrefix path expected %s, but got %s", in.childPrefixExpect, in.folder.ChildPrefix)
 		}
 	}
 }

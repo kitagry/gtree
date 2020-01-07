@@ -7,4 +7,5 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
 )
