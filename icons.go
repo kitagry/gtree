@@ -1,10 +1,10 @@
 package main
 
-import "github.com/fatih/color"
+import "github.com/gookit/color"
 
 type Icon struct {
 	Icon  string
-	Color color.Attribute
+	Color color.Color
 }
 
 var defaultFileIcon = Icon{
@@ -16,9 +16,9 @@ var icons = map[string]Icon{
 	"styl":     Icon{Icon: "", Color: color.FgGreen},
 	"sass":     Icon{Icon: "", Color: color.FgWhite},
 	"scss":     Icon{Icon: "", Color: color.FgMagenta},
-	"htm":      Icon{Icon: "", Color: color.FgHiRed},
-	"html":     Icon{Icon: "", Color: color.FgHiRed},
-	"slim":     Icon{Icon: "", Color: color.FgHiRed},
+	"htm":      Icon{Icon: "", Color: color.FgLightRed},
+	"html":     Icon{Icon: "", Color: color.FgLightRed},
+	"slim":     Icon{Icon: "", Color: color.FgLightRed},
 	"ejs":      Icon{Icon: "", Color: color.FgYellow},
 	"css":      Icon{Icon: "", Color: color.FgBlue},
 	"less":     Icon{Icon: "", Color: color.FgBlue},
@@ -36,8 +36,8 @@ var icons = map[string]Icon{
 	"pyo":      Icon{Icon: "", Color: color.FgYellow},
 	"pyd":      Icon{Icon: "", Color: color.FgYellow},
 	"coffee":   Icon{Icon: "", Color: color.FgYellow},
-	"mustache": Icon{Icon: "", Color: color.FgHiRed},
-	"hbs":      Icon{Icon: "", Color: color.FgHiRed},
+	"mustache": Icon{Icon: "", Color: color.FgLightRed},
+	"hbs":      Icon{Icon: "", Color: color.FgLightRed},
 	"conf":     Icon{Icon: "", Color: color.FgWhite},
 	"ini":      Icon{Icon: "", Color: color.FgWhite},
 	"yml":      Icon{Icon: "", Color: color.FgWhite},
@@ -83,19 +83,19 @@ var icons = map[string]Icon{
 	"scala":    Icon{Icon: "", Color: color.FgRed},
 	"go":       Icon{Icon: "", Color: color.FgWhite},
 	"dart":     Icon{Icon: "", Color: color.FgWhite},
-	"xul":      Icon{Icon: "", Color: color.FgHiRed},
+	"xul":      Icon{Icon: "", Color: color.FgLightRed},
 	"sln":      Icon{Icon: "", Color: color.FgMagenta},
 	"suo":      Icon{Icon: "", Color: color.FgMagenta},
 	"pl":       Icon{Icon: "", Color: color.FgBlue},
 	"pm":       Icon{Icon: "", Color: color.FgBlue},
 	"t":        Icon{Icon: "", Color: color.FgBlue},
-	"rss":      Icon{Icon: "", Color: color.FgHiRed},
+	"rss":      Icon{Icon: "", Color: color.FgLightRed},
 	"fsscript": Icon{Icon: "", Color: color.FgBlue},
 	"fsx":      Icon{Icon: "", Color: color.FgBlue},
 	"fs":       Icon{Icon: "", Color: color.FgBlue},
 	"fsi":      Icon{Icon: "", Color: color.FgBlue},
-	"rs":       Icon{Icon: "", Color: color.FgHiRed},
-	"rlib":     Icon{Icon: "", Color: color.FgHiRed},
+	"rs":       Icon{Icon: "", Color: color.FgLightRed},
+	"rlib":     Icon{Icon: "", Color: color.FgLightRed},
 	"d":        Icon{Icon: "", Color: color.FgRed},
 	"erl":      Icon{Icon: "", Color: color.FgMagenta},
 	"ex":       Icon{Icon: "", Color: color.FgMagenta},
@@ -103,7 +103,7 @@ var icons = map[string]Icon{
 	"eex":      Icon{Icon: "", Color: color.FgMagenta},
 	"hrl":      Icon{Icon: "", Color: color.FgMagenta},
 	"vim":      Icon{Icon: "", Color: color.FgGreen},
-	"ai":       Icon{Icon: "", Color: color.FgHiRed},
+	"ai":       Icon{Icon: "", Color: color.FgLightRed},
 	"psd":      Icon{Icon: "", Color: color.FgBlue},
 	"psb":      Icon{Icon: "", Color: color.FgBlue},
 	"ts":       Icon{Icon: "", Color: color.FgBlue},
