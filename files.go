@@ -1,16 +1,10 @@
 package main
 
 import (
-	"errors"
-	"io"
+	"os"
 	"strings"
 
-	"github.com/fatih/color"
-)
-
-var (
-	folderColor = color.New(color.FgBlue)
-	symColor    = color.New(color.FgHiCyan)
+	"golang.org/x/xerrors"
 )
 
 // FileInfo is interface for file and folder.
@@ -21,151 +15,57 @@ type FileInfo interface {
 	// Path returns relative path from file tree's root.
 	Path() string
 
+	// FileType returns files type
+	// If FileInfo is directory, returns ""
+	FileType() string
+
 	// IsLast is true when FileInfo is last child of parent's children.
 	// This will use to display tree.
 	IsLast() bool
 
-	// Write output to io.Writer.
-	// If isFullPath is true, Write output fileInfo.Path()
-	Write(w io.Writer, isFullPath bool) error
+	// Parent returns fileinfo's parent.
+	// When FileInfo doesn't have parent, return false.
+	Parent() (FileInfo, bool)
+
+	// ChildPrefix is prefix of children's prefix
+	ChildPrefix() string
+
+	// IsDir returns true, when FileInfo is directory
+	IsDir() bool
+
+	// IsSym returns true, when FileInfo is symlink
+	IsSym() bool
+
+	// SymLink returns symlink path
+	SymLink() (string, error)
+
+	// SetError set error
+	SetError(err error)
+
+	// Error return error
+	Error() error
 }
 
-type File struct {
-	name   string
+func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) (FileInfo, error) {
+	var result FileInfo
+	if f.IsDir() {
+		result = newFolder(f, parent, isLast)
+	} else {
+		result = newFile(f, parent, isLast)
+	}
+	return result, nil
+}
+
+type baseFileInfo struct {
+	os.FileInfo
+
 	parent FileInfo
 	isLast bool
-
-	path    string
-	SymLink string
+	path   string
+	err    error
 }
 
-var _ FileInfo = (*File)(nil)
-
-func NewFile(name string, parent FileInfo, isLast bool, symLink string) *File {
-	return &File{
-		name:    name,
-		parent:  parent,
-		isLast:  isLast,
-		SymLink: symLink,
-	}
-}
-
-func (f *File) Name() string {
-	return f.name
-}
-
-func (f *File) Suffix() string {
-	n := strings.Split(f.name, ".")
-	return n[len(n)-1]
-}
-
-func (f *File) Path() string {
-	if f.path == "" {
-		if f.parent == nil {
-			f.path = f.name
-		} else {
-			f.path = f.parent.Path() + "/" + f.name
-		}
-	}
-
-	return f.path
-}
-
-func (f *File) IsLast() bool {
-	return f.isLast
-}
-
-func (f *File) IsSym() bool {
-	return f.SymLink != ""
-}
-
-func (f *File) Write(w io.Writer, isFullPath bool) error {
-	icon, ok := icons[f.Suffix()]
-	if !ok {
-		icon = defaultFileIcon
-	}
-
-	switch v := f.parent.(type) {
-	case *Folder:
-		var err error
-		if f.IsLast() {
-			_, err = w.Write([]byte(v.ChildPrefix + "└── "))
-		} else {
-			_, err = w.Write([]byte(v.ChildPrefix + "├── "))
-		}
-
-		if err != nil {
-			return err
-		}
-
-		if f.IsSym() {
-			color.New(icon.Color).Fprint(w, icon.Icon+" ")
-			var err error
-			if isFullPath {
-				_, err = symColor.Fprint(w, f.Path())
-			} else {
-				_, err = symColor.Fprint(w, f.Name())
-			}
-
-			if err != nil {
-				return err
-			}
-
-			_, err = w.Write([]byte(" -> " + f.SymLink + "\n"))
-			if err != nil {
-				return err
-			}
-		} else {
-			color.New(icon.Color).Fprint(w, icon.Icon+" ")
-			var err error
-			if isFullPath {
-				_, err = w.Write([]byte(f.Path() + "\n"))
-			} else {
-				_, err = w.Write([]byte(f.Name() + "\n"))
-			}
-
-			if err != nil {
-				return err
-			}
-		}
-	case nil:
-		color.New(icon.Color).Fprint(w, icon.Icon+" ")
-		_, err := w.Write([]byte(f.Name() + "\n"))
-		if err != nil {
-			return err
-		}
-	default:
-		return errors.New("Unexpected parent type")
-	}
-	return nil
-}
-
-type Folder struct {
-	name        string
-	parent      FileInfo
-	Children    []FileInfo
-	ChildPrefix string
-	isLast      bool
-
-	path string
-	err  error
-}
-
-var _ FileInfo = (*Folder)(nil)
-
-func NewFolder(name string, parent FileInfo, isLast bool) *Folder {
-	return &Folder{
-		name:   name,
-		parent: parent,
-		isLast: isLast,
-	}
-}
-
-func (f *Folder) Name() string {
-	return f.name
-}
-
-func (f *Folder) Path() string {
+func (f *baseFileInfo) Path() string {
 	if f.path == "" {
 		if f.parent == nil {
 			f.path = f.Name()
@@ -177,60 +77,110 @@ func (f *Folder) Path() string {
 	return f.path
 }
 
-func (f *Folder) IsLast() bool {
+func (f *baseFileInfo) Parent() (FileInfo, bool) {
+	if f.parent == nil {
+		return nil, false
+	}
+	return f.parent, true
+}
+
+func (f *baseFileInfo) IsLast() bool {
 	return f.isLast
 }
 
-func (f *Folder) SetError(err error) {
+func (f *baseFileInfo) IsSym() bool {
+	return f.Mode()&os.ModeSymlink != 0
+}
+
+func (f *baseFileInfo) SymLink() (string, error) {
+	if !f.IsSym() {
+		// TODO: it may returns error
+		return "", xerrors.New("This is not symlink")
+	}
+
+	symLink, err := os.Readlink(f.Path())
+	if err != nil {
+		return "", err
+	}
+
+	return symLink, nil
+}
+
+func (f *baseFileInfo) SetError(err error) {
 	f.err = err
 }
 
-func (f *Folder) displayName() string {
-	if f.err != nil {
-		return f.Name() + " [" + f.err.Error() + "]"
-	}
-	return f.Name()
+func (f *baseFileInfo) Error() error {
+	return f.err
 }
 
-func (f *Folder) displayPath() string {
-	if f.err != nil {
-		return f.Path() + " [" + f.err.Error() + "]"
-	}
-	return f.Path()
+type file struct {
+	baseFileInfo
 }
 
-func (f *Folder) Write(w io.Writer, isFullPath bool) error {
-	if f.parent == nil {
-		_, err := folderColor.Fprintln(w, f.Name())
-		return err
-	}
+var _ FileInfo = (*file)(nil)
 
-	switch v := f.parent.(type) {
-	case *Folder:
-		var err error
+func newFile(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
+	return &file{
+		baseFileInfo{
+			FileInfo: f,
+			parent:   parent,
+			isLast:   isLast,
+		},
+	}
+}
+
+func (f *file) FileType() string {
+	n := strings.Split(f.Name(), ".")
+	return n[len(n)-1]
+}
+
+func (f *file) ChildPrefix() string {
+	return ""
+}
+
+func (f *file) IsSym() bool {
+	return f.Mode()&os.ModeSymlink != 0
+}
+
+func (f *file) symLink() (string, error) {
+	symLink, err := os.Readlink(f.Path())
+	if err != nil {
+		return "", err
+	}
+	return symLink, nil
+}
+
+type folder struct {
+	baseFileInfo
+
+	childPrefix string
+}
+
+var _ FileInfo = (*folder)(nil)
+
+func newFolder(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
+	return &folder{
+		baseFileInfo: baseFileInfo{
+			FileInfo: f,
+			parent:   parent,
+			isLast:   isLast,
+		},
+	}
+}
+
+func (f *folder) FileType() string {
+	return ""
+}
+
+func (f *folder) ChildPrefix() string {
+	p, ok := f.Parent()
+	if f.childPrefix == "" && ok {
 		if f.IsLast() {
-			_, err = w.Write([]byte(v.ChildPrefix + "└── "))
-			f.ChildPrefix = v.ChildPrefix + "    "
+			f.childPrefix = p.ChildPrefix() + "    "
 		} else {
-			_, err = w.Write([]byte(v.ChildPrefix + "├── "))
-			f.ChildPrefix = v.ChildPrefix + "│   "
+			f.childPrefix = p.ChildPrefix() + "│   "
 		}
-
-		if err != nil {
-			return err
-		}
-
-		if isFullPath {
-			_, err = folderColor.Fprintln(w, f.displayPath())
-		} else {
-			_, err = folderColor.Fprintln(w, f.displayName())
-		}
-
-		if err != nil {
-			return err
-		}
-	default:
-		return errors.New("Unexpected parent type")
 	}
-	return nil
+	return f.childPrefix
 }

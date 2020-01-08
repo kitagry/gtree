@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -102,7 +103,16 @@ func main() {
 // Run is to search files, and display these files.
 // Search and Display communicate through channel.
 func Run(root string) error {
-	rootFile := NewFolder(root, nil, true)
+	f, err := os.Stat(root)
+	if err != nil {
+		return err
+	}
+
+	rootFile, err := NewFileInfo(f, nil, true)
+
+	if !rootFile.IsDir() {
+		rootFile.SetError(errors.New("error opening dir"))
+	}
 	ch := make(chan FileInfo)
 
 	// Search files.
@@ -132,8 +142,9 @@ func Run(root string) error {
 	}
 
 	w := bufio.NewWriter(out)
+	p := NewPrinter()
 	for file := range ch {
-		err := file.Write(w, opts.ListOptions.ListDisplayOptions.IsFullPath())
+		err := p.Write(w, file, opts.ListOptions.ListDisplayOptions.IsFullPath())
 		if err != nil {
 			w.Flush()
 			return err

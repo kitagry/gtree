@@ -16,44 +16,33 @@ func Dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 }
 
 func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) error {
-	switch f := root.(type) {
-	case *File:
-		ch <- f
-	case *Folder:
-		files, err := ioutil.ReadDir(f.Path())
+	if !root.IsDir() {
+		ch <- root
+		return nil
+	}
+
+	files, err := ioutil.ReadDir(root.Path())
+	if err != nil {
+		root.SetError(err)
+		ch <- root
+		return nil
+	}
+	ch <- root
+
+	files = filterFiles(files, listOptions)
+
+	for i, file := range files {
+		isLast := i == len(files)-1
+
+		child, err := NewFileInfo(file, root, isLast)
 		if err != nil {
-			// Set error, but display this folder.
-			f.SetError(err)
-			ch <- f
-			return nil
+			return err
 		}
-		ch <- f
 
-		files = filterFiles(files, listOptions)
-
-		for i, file := range files {
-			isLast := i == len(files)-1
-
-			var child FileInfo
-			if file.IsDir() {
-				child = NewFolder(file.Name(), f, isLast)
-			} else {
-				if file.Mode()&os.ModeSymlink != 0 {
-					sym, _ := os.Readlink(f.Path() + "/" + file.Name())
-					child = NewFile(file.Name(), f, isLast, sym)
-				} else {
-					child = NewFile(file.Name(), f, isLast, "")
-				}
-			}
-
-			f.Children = append(f.Children, child)
-			err = dirwalk(child, ch, listOptions)
-			if err != nil {
-				return err
-			}
+		err = dirwalk(child, ch, listOptions)
+		if err != nil {
+			return err
 		}
-	default:
-		return fmt.Errorf("Unexpected File type")
 	}
 	return nil
 }

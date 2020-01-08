@@ -8,31 +8,31 @@ import (
 	"time"
 )
 
-type dummyFileInfo struct {
+type dummySearchFileInfo struct {
 	name      string
 	isDir     bool
 	isSymlink bool
 }
 
-func newDummyFileInfo(name string, isDir, isSymlink bool) *dummyFileInfo {
-	return &dummyFileInfo{
+func newDummySearchFileInfo(name string, isDir, isSymlink bool) *dummySearchFileInfo {
+	return &dummySearchFileInfo{
 		name:      name,
 		isDir:     isDir,
 		isSymlink: isSymlink,
 	}
 }
 
-var _ os.FileInfo = (*dummyFileInfo)(nil)
+var _ os.FileInfo = (*dummySearchFileInfo)(nil)
 
-func (d *dummyFileInfo) Name() string {
+func (d *dummySearchFileInfo) Name() string {
 	return d.name
 }
 
-func (d *dummyFileInfo) Size() int64 {
+func (d *dummySearchFileInfo) Size() int64 {
 	return 0
 }
 
-func (d *dummyFileInfo) Mode() os.FileMode {
+func (d *dummySearchFileInfo) Mode() os.FileMode {
 	var result os.FileMode
 	if d.isDir {
 		result |= os.ModeDir
@@ -45,19 +45,19 @@ func (d *dummyFileInfo) Mode() os.FileMode {
 	return result
 }
 
-func (d *dummyFileInfo) IsDir() bool {
+func (d *dummySearchFileInfo) IsDir() bool {
 	return d.isDir
 }
 
-func (d *dummyFileInfo) Sys() interface{} {
+func (d *dummySearchFileInfo) Sys() interface{} {
 	return nil
 }
 
-func (d *dummyFileInfo) ModTime() time.Time {
+func (d *dummySearchFileInfo) ModTime() time.Time {
 	return time.Now()
 }
 
-func (d *dummyFileInfo) String() string {
+func (d *dummySearchFileInfo) String() string {
 	if d.IsDir() {
 		return fmt.Sprintf("Folder(%s)", d.Name())
 	}
@@ -66,14 +66,14 @@ func (d *dummyFileInfo) String() string {
 
 func TestFilterFiles(t *testing.T) {
 	files := []os.FileInfo{
-		newDummyFileInfo("file", false, false),
-		newDummyFileInfo("sym-file", false, true),
-		newDummyFileInfo("folder", true, false),
-		newDummyFileInfo("sym-folder", true, true),
-		newDummyFileInfo(".dotfile", false, false),
-		newDummyFileInfo(".sym-dotfile", false, true),
-		newDummyFileInfo(".dotfolder", true, false),
-		newDummyFileInfo(".sym-dotfolder", true, true),
+		newDummySearchFileInfo("file", false, false),
+		newDummySearchFileInfo("sym-file", false, true),
+		newDummySearchFileInfo("folder", true, false),
+		newDummySearchFileInfo("sym-folder", true, true),
+		newDummySearchFileInfo(".dotfile", false, false),
+		newDummySearchFileInfo(".sym-dotfile", false, true),
+		newDummySearchFileInfo(".dotfolder", true, false),
+		newDummySearchFileInfo(".sym-dotfolder", true, true),
 	}
 
 	inputs := []struct {
@@ -87,10 +87,10 @@ func TestFilterFiles(t *testing.T) {
 				IgnorePattern: "",
 			},
 			[]os.FileInfo{
-				newDummyFileInfo("file", false, false),
-				newDummyFileInfo("sym-file", false, true),
-				newDummyFileInfo("folder", true, false),
-				newDummyFileInfo("sym-folder", true, true),
+				newDummySearchFileInfo("file", false, false),
+				newDummySearchFileInfo("sym-file", false, true),
+				newDummySearchFileInfo("folder", true, false),
+				newDummySearchFileInfo("sym-folder", true, true),
 			},
 		},
 		{
@@ -100,14 +100,14 @@ func TestFilterFiles(t *testing.T) {
 				IgnorePattern: "",
 			},
 			[]os.FileInfo{
-				newDummyFileInfo("file", false, false),
-				newDummyFileInfo("sym-file", false, true),
-				newDummyFileInfo("folder", true, false),
-				newDummyFileInfo("sym-folder", true, true),
-				newDummyFileInfo(".dotfile", false, false),
-				newDummyFileInfo(".sym-dotfile", false, true),
-				newDummyFileInfo(".dotfolder", true, false),
-				newDummyFileInfo(".sym-dotfolder", true, true),
+				newDummySearchFileInfo("file", false, false),
+				newDummySearchFileInfo("sym-file", false, true),
+				newDummySearchFileInfo("folder", true, false),
+				newDummySearchFileInfo("sym-folder", true, true),
+				newDummySearchFileInfo(".dotfile", false, false),
+				newDummySearchFileInfo(".sym-dotfile", false, true),
+				newDummySearchFileInfo(".dotfolder", true, false),
+				newDummySearchFileInfo(".sym-dotfolder", true, true),
 			},
 		},
 		{
@@ -117,8 +117,8 @@ func TestFilterFiles(t *testing.T) {
 				IgnorePattern: "",
 			},
 			[]os.FileInfo{
-				newDummyFileInfo("folder", true, false),
-				newDummyFileInfo("sym-folder", true, true),
+				newDummySearchFileInfo("folder", true, false),
+				newDummySearchFileInfo("sym-folder", true, true),
 			},
 		},
 		{
@@ -128,10 +128,10 @@ func TestFilterFiles(t *testing.T) {
 				IgnorePattern: "",
 			},
 			[]os.FileInfo{
-				newDummyFileInfo("folder", true, false),
-				newDummyFileInfo("sym-folder", true, true),
-				newDummyFileInfo(".dotfolder", true, false),
-				newDummyFileInfo(".sym-dotfolder", true, true),
+				newDummySearchFileInfo("folder", true, false),
+				newDummySearchFileInfo("sym-folder", true, true),
+				newDummySearchFileInfo(".dotfolder", true, false),
+				newDummySearchFileInfo(".sym-dotfolder", true, true),
 			},
 		},
 		{
@@ -141,9 +141,9 @@ func TestFilterFiles(t *testing.T) {
 				IgnorePattern: "folder",
 			},
 			[]os.FileInfo{
-				newDummyFileInfo("sym-folder", true, true),
-				newDummyFileInfo(".dotfolder", true, false),
-				newDummyFileInfo(".sym-dotfolder", true, true),
+				newDummySearchFileInfo("sym-folder", true, true),
+				newDummySearchFileInfo(".dotfolder", true, false),
+				newDummySearchFileInfo(".sym-dotfolder", true, true),
 			},
 		},
 	}

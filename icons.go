@@ -112,3 +112,11 @@ var icons = map[string]Icon{
 	"pp":       Icon{Icon: "", Color: color.FgWhite},
 	"vue":      Icon{Icon: "﵂", Color: color.FgGreen},
 }
+
+func NewIconString(suffix string) string {
+	icon, ok := icons[suffix]
+	if !ok {
+		icon = defaultFileIcon
+	}
+	return color.New(icon.Color).Sprint(icon.Icon)
+}
