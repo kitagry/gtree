@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/fatih/color"
+	"github.com/gookit/color"
 )
 
 var (
 	folderColor = color.New(color.FgBlue)
-	symColor    = color.New(color.FgHiCyan)
+	symColor    = color.New(color.FgLightCyan)
 )
 
 // Printer write FileInfo as tree

@@ -87,7 +87,7 @@ func (d *dummyPrinterFileInfo) Error() error {
 	return d.err
 }
 
-func TestPrinterWrite(t *testing.T) {
+func TestPrinter_Write(t *testing.T) {
 	p := NewPrinter()
 	inputs := []struct {
 		fileInfo            FileInfo
