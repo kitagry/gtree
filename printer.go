@@ -32,7 +32,9 @@ func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
 		writtenName = f.Name()
 	}
 
-	if f.IsSym() {
+	if f.IsDir() {
+		w.Write([]byte(folderColor.Sprintf(writtenName)))
+	} else if f.IsSym() {
 		symLink, err := f.SymLink()
 		if err != nil {
 			return err
