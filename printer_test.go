@@ -87,10 +87,6 @@ func (d *dummyPrinterFileInfo) Error() error {
 	return d.err
 }
 
-func (d *dummyPrinterFileInfo) AddChild(child FileInfo) error {
-	return nil
-}
-
 func TestPrinterWrite(t *testing.T) {
 	p := NewPrinter()
 	inputs := []struct {

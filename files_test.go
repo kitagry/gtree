@@ -47,17 +47,19 @@ func (f *dummyOsFile) Sys() interface{} {
 	panic("not implemented")
 }
 
-func TestFileSuffix(t *testing.T) {
+func TestFileInfo_FileType(t *testing.T) {
 	fi1, _ := NewFileInfo(newDummyOsFile("readme", false, false), nil, false)
 	fi2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
 	fi3, _ := NewFileInfo(newDummyOsFile("test.html.erb", false, false), nil, false)
+	fo, _ := NewFileInfo(newDummyOsFile("directory", true, false), nil, false)
 	inputs := []struct {
 		file   FileInfo
 		expect string
 	}{
 		{fi1, "readme"},
 		{fi2, "go"},
-		{fi3, "erb"},
+		{fi3, "erb"}, // TODO: Change "html.erb"?
+		{fo, ""},
 	}
 
 	for _, input := range inputs {
@@ -67,7 +69,7 @@ func TestFileSuffix(t *testing.T) {
 	}
 }
 
-func TestFilesPath(t *testing.T) {
+func TestFileInfo_Path(t *testing.T) {
 	d1, _ := NewFileInfo(newDummyOsFile("test1", true, false), nil, false)
 	d2, _ := NewFileInfo(newDummyOsFile("test2", true, false), d1, false)
 	// test.go
@@ -93,27 +95,53 @@ func TestFilesPath(t *testing.T) {
 	}
 }
 
-func TestFolderPath(t *testing.T) {
+func TestFileInfo_Parent(t *testing.T) {
 	d1, _ := NewFileInfo(newDummyOsFile("test1", true, false), nil, false)
-	d2, _ := NewFileInfo(newDummyOsFile("test2", true, false), d1, false)
-	// test
-	r1, _ := NewFileInfo(newDummyOsFile("test", true, false), nil, false)
-	// test1 -> test
-	r2, _ := NewFileInfo(newDummyOsFile("test", true, false), d1, false)
-	// test1 -> test
-	r3, _ := NewFileInfo(newDummyOsFile("test", true, false), d2, false)
+	f1, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
+	f2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), d1, false)
+
 	inputs := []struct {
-		folder FileInfo
-		expect string
+		file   FileInfo
+		parent FileInfo
+		ok     bool
 	}{
-		{r1, "test"},
-		{r2, "test1/test"},
-		{r3, "test1/test2/test"},
+		{f1, nil, false},
+		{f2, d1, true},
 	}
 
-	for _, in := range inputs {
-		if in.folder.Path() != in.expect {
-			t.Errorf("folder.Path() expected %s, but got %s", in.expect, in.folder.Path())
+	for _, input := range inputs {
+		p, ok := input.file.Parent()
+		if p != input.parent {
+			t.Errorf("FileInfo %v parent expect %v, but got %v", input.file, input.parent, p)
+		}
+
+		if ok != input.ok {
+			t.Errorf("FileInfo %v Parent() ok expect %v, but got %v", input.file, input.ok, ok)
+		}
+	}
+}
+
+func TestFileInfo_ChildPrefix(t *testing.T) {
+	root, _ := NewFileInfo(newDummyOsFile("root", true, false), nil, false)
+	f1, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
+	f2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), root, false)
+	d1, _ := NewFileInfo(newDummyOsFile("test", true, false), root, false)
+	d2, _ := NewFileInfo(newDummyOsFile("test", true, false), root, true)
+
+	inputs := []struct {
+		file        FileInfo
+		childPrefix string
+	}{
+		{root, ""},
+		{f1, ""},
+		{f2, ""},
+		{d1, "│   "},
+		{d2, "    "},
+	}
+
+	for _, input := range inputs {
+		if input.file.ChildPrefix() != input.childPrefix {
+			t.Errorf("FileInfo.ChildPrefix expect %s, but got %s", input.childPrefix, input.file.ChildPrefix())
 		}
 	}
 }

@@ -1,17 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	"golang.org/x/xerrors"
-)
-
-var (
-	folderColor = color.New(color.FgBlue)
-	symColor    = color.New(color.FgHiCyan)
 )
 
 // FileInfo is interface for file and folder.
@@ -51,9 +44,6 @@ type FileInfo interface {
 
 	// Error return error
 	Error() error
-
-	// AddChild
-	AddChild(child FileInfo) error
 }
 
 func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) (FileInfo, error) {
@@ -62,13 +52,6 @@ func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) (FileInfo, error) 
 		result = newFolder(f, parent, isLast)
 	} else {
 		result = newFile(f, parent, isLast)
-	}
-
-	if parent != nil {
-		err := parent.AddChild(result)
-		if err != nil {
-			return nil, xerrors.Errorf("NewFileInfo error: %w", err)
-		}
 	}
 	return result, nil
 }
@@ -168,14 +151,9 @@ func (f *file) symLink() (string, error) {
 	return symLink, nil
 }
 
-func (f *file) AddChild(c FileInfo) error {
-	return fmt.Errorf("file cannot have child")
-}
-
 type folder struct {
 	baseFileInfo
 
-	children    []FileInfo
 	childPrefix string
 }
 
@@ -205,23 +183,4 @@ func (f *folder) ChildPrefix() string {
 		}
 	}
 	return f.childPrefix
-}
-
-func (f *folder) displayName() string {
-	if f.err != nil {
-		return f.Name() + " [" + f.err.Error() + "]"
-	}
-	return f.Name()
-}
-
-func (f *folder) displayPath() string {
-	if f.err != nil {
-		return f.Path() + " [" + f.err.Error() + "]"
-	}
-	return f.Path()
-}
-
-func (f *folder) AddChild(c FileInfo) error {
-	f.children = append(f.children, c)
-	return nil
 }

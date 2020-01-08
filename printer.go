@@ -3,11 +3,20 @@ package main
 import (
 	"fmt"
 	"io"
+
+	"github.com/fatih/color"
 )
 
+var (
+	folderColor = color.New(color.FgBlue)
+	symColor    = color.New(color.FgHiCyan)
+)
+
+// Printer write FileInfo as tree
 type Printer struct {
 }
 
+// NewPrinter return Printer pointer
 func NewPrinter() *Printer {
 	return &Printer{}
 }
