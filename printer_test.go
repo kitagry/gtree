@@ -106,8 +106,8 @@ func TestPrinterWrite(t *testing.T) {
 		},
 		{
 			newDummyPrinterFileInfo("test", "test/test", "", "", "", false, true, nil, nil),
-			"test\n",
-			"test/test\n",
+			folderColor.Sprintf("test") + "\n",
+			folderColor.Sprintf("test/test") + "\n",
 		},
 		{
 			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil,
