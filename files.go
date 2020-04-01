@@ -46,14 +46,16 @@ type FileInfo interface {
 	Error() error
 }
 
-func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) (FileInfo, error) {
+// NewFileInfo returns File when f is file. And, when f is folder, this returns Folder.
+// File and Folder are implemented FileInfo interface.
+func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
 	var result FileInfo
 	if f.IsDir() {
 		result = newFolder(f, parent, isLast)
 	} else {
 		result = newFile(f, parent, isLast)
 	}
-	return result, nil
+	return result
 }
 
 type baseFileInfo struct {
@@ -94,7 +96,6 @@ func (f *baseFileInfo) IsSym() bool {
 
 func (f *baseFileInfo) SymLink() (string, error) {
 	if !f.IsSym() {
-		// TODO: it may returns error
 		return "", xerrors.New("This is not symlink")
 	}
 
@@ -141,14 +142,6 @@ func (f *file) ChildPrefix() string {
 
 func (f *file) IsSym() bool {
 	return f.Mode()&os.ModeSymlink != 0
-}
-
-func (f *file) symLink() (string, error) {
-	symLink, err := os.Readlink(f.Path())
-	if err != nil {
-		return "", err
-	}
-	return symLink, nil
 }
 
 type folder struct {

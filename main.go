@@ -108,7 +108,7 @@ func Run(root string) error {
 		return err
 	}
 
-	rootFile, err := NewFileInfo(f, nil, true)
+	rootFile := NewFileInfo(f, nil, true)
 
 	if !rootFile.IsDir() {
 		rootFile.SetError(errors.New("error opening dir"))

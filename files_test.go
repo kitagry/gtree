@@ -12,11 +12,11 @@ type dummyOsFile struct {
 	isSym bool
 }
 
-func newDummyOsFile(name string, isDir bool, isSym bool) os.FileInfo {
+func newDummyOsFile(name string, isDir bool) os.FileInfo {
 	return &dummyOsFile{
 		name:  name,
 		isDir: isDir,
-		isSym: isSym,
+		isSym: false,
 	}
 }
 
@@ -48,10 +48,10 @@ func (f *dummyOsFile) Sys() interface{} {
 }
 
 func TestFileInfo_FileType(t *testing.T) {
-	fi1, _ := NewFileInfo(newDummyOsFile("readme", false, false), nil, false)
-	fi2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
-	fi3, _ := NewFileInfo(newDummyOsFile("test.html.erb", false, false), nil, false)
-	fo, _ := NewFileInfo(newDummyOsFile("directory", true, false), nil, false)
+	fi1 := NewFileInfo(newDummyOsFile("readme", false), nil, false)
+	fi2 := NewFileInfo(newDummyOsFile("test.go", false), nil, false)
+	fi3 := NewFileInfo(newDummyOsFile("test.html.erb", false), nil, false)
+	fo := NewFileInfo(newDummyOsFile("directory", true), nil, false)
 	inputs := []struct {
 		file   FileInfo
 		expect string
@@ -70,14 +70,14 @@ func TestFileInfo_FileType(t *testing.T) {
 }
 
 func TestFileInfo_Path(t *testing.T) {
-	d1, _ := NewFileInfo(newDummyOsFile("test1", true, false), nil, false)
-	d2, _ := NewFileInfo(newDummyOsFile("test2", true, false), d1, false)
+	d1 := NewFileInfo(newDummyOsFile("test1", true), nil, false)
+	d2 := NewFileInfo(newDummyOsFile("test2", true), d1, false)
 	// test.go
-	fi1, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
+	fi1 := NewFileInfo(newDummyOsFile("test.go", false), nil, false)
 	// test1 -> test.go
-	fi2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), d1, false)
+	fi2 := NewFileInfo(newDummyOsFile("test.go", false), d1, false)
 	// test1 -> test2 -> test.go
-	fi3, _ := NewFileInfo(newDummyOsFile("test.go", false, false), d2, false)
+	fi3 := NewFileInfo(newDummyOsFile("test.go", false), d2, false)
 
 	inputs := []struct {
 		file   FileInfo
@@ -96,9 +96,9 @@ func TestFileInfo_Path(t *testing.T) {
 }
 
 func TestFileInfo_Parent(t *testing.T) {
-	d1, _ := NewFileInfo(newDummyOsFile("test1", true, false), nil, false)
-	f1, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
-	f2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), d1, false)
+	d1 := NewFileInfo(newDummyOsFile("test1", true), nil, false)
+	f1 := NewFileInfo(newDummyOsFile("test.go", false), nil, false)
+	f2 := NewFileInfo(newDummyOsFile("test.go", false), d1, false)
 
 	inputs := []struct {
 		file   FileInfo
@@ -122,11 +122,11 @@ func TestFileInfo_Parent(t *testing.T) {
 }
 
 func TestFileInfo_ChildPrefix(t *testing.T) {
-	root, _ := NewFileInfo(newDummyOsFile("root", true, false), nil, false)
-	f1, _ := NewFileInfo(newDummyOsFile("test.go", false, false), nil, false)
-	f2, _ := NewFileInfo(newDummyOsFile("test.go", false, false), root, false)
-	d1, _ := NewFileInfo(newDummyOsFile("test", true, false), root, false)
-	d2, _ := NewFileInfo(newDummyOsFile("test", true, false), root, true)
+	root := NewFileInfo(newDummyOsFile("root", true), nil, false)
+	f1 := NewFileInfo(newDummyOsFile("test.go", false), nil, false)
+	f2 := NewFileInfo(newDummyOsFile("test.go", false), root, false)
+	d1 := NewFileInfo(newDummyOsFile("test", true), root, false)
+	d2 := NewFileInfo(newDummyOsFile("test", true), root, true)
 
 	inputs := []struct {
 		file        FileInfo

@@ -34,10 +34,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 	for i, file := range files {
 		isLast := i == len(files)-1
 
-		child, err := NewFileInfo(file, root, isLast)
-		if err != nil {
-			return err
-		}
+		child := NewFileInfo(file, root, isLast)
 
 		err = dirwalk(child, ch, listOptions)
 		if err != nil {
