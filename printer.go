@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/gookit/color"
+	"golang.org/x/xerrors"
 )
 
 var (
@@ -22,16 +23,25 @@ func NewPrinter() *Printer {
 }
 
 func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
+	var err error
 	if pa, ok := f.Parent(); ok {
 		if f.IsLast() {
-			w.Write([]byte(pa.ChildPrefix() + "└── "))
+			_, err = w.Write([]byte(pa.ChildPrefix() + "└── "))
 		} else {
-			w.Write([]byte(pa.ChildPrefix() + "├── "))
+			_, err = w.Write([]byte(pa.ChildPrefix() + "├── "))
+		}
+
+		if err != nil {
+			return xerrors.Errorf("failed to write: %w", err)
 		}
 	}
 
 	if !f.IsDir() {
-		w.Write([]byte(NewIconString(f.FileType()) + " "))
+		_, err = w.Write([]byte(NewIconString(f.FileType()) + " "))
+
+		if err != nil {
+			return xerrors.Errorf("failed to write: %w", err)
+		}
 	}
 
 	var writtenName string
@@ -41,23 +51,35 @@ func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
 		writtenName = f.Name()
 	}
 
-	if f.IsDir() {
-		w.Write([]byte(folderColor.Sprintf(writtenName)))
-	} else if f.IsSym() {
-		symLink, err := f.SymLink()
+	switch {
+	case f.IsDir():
+		_, err = w.Write([]byte(folderColor.Sprintf(writtenName)))
+	case f.IsSym():
+		var symLink string
+		symLink, err = f.SymLink()
 		if err != nil {
-			return err
+			return xerrors.Errorf("failed to retrieve symlink path: %w", err)
 		}
 
-		w.Write([]byte(fmt.Sprintf("%s -> %s", symColor.Sprint(writtenName), symLink)))
-	} else {
-		w.Write([]byte(writtenName))
+		_, err = w.Write([]byte(fmt.Sprintf("%s -> %s", symColor.Sprint(writtenName), symLink)))
+	default:
+		_, err = w.Write([]byte(writtenName))
+	}
+
+	if err != nil {
+		return xerrors.Errorf("failed to write: %w", err)
 	}
 
 	if err := f.Error(); err != nil {
-		w.Write([]byte(fmt.Sprintf(" [%s]", err.Error())))
+		_, err = w.Write([]byte(fmt.Sprintf(" [%s]", err.Error())))
+		if err != nil {
+			return xerrors.Errorf("failed to write: %w", err)
+		}
 	}
 
-	w.Write([]byte("\n"))
+	_, err = w.Write([]byte("\n"))
+	if err != nil {
+		return xerrors.Errorf("failed to write: %w", err)
+	}
 	return nil
 }

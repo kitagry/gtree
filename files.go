@@ -46,6 +46,8 @@ type FileInfo interface {
 	Error() error
 }
 
+// NewFileInfo returns File when f is file. And, when f is folder, this returns Folder.
+// File and Folder are implemented FileInfo interface.
 func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
 	var result FileInfo
 	if f.IsDir() {

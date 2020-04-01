@@ -2,17 +2,18 @@ package main
 
 import "github.com/gookit/color"
 
+// Icon is a set of icon and color.
 type Icon struct {
 	Icon  string
 	Color color.Color
 }
 
-var DefaultFileIcon = Icon{
+var defaultFileIcon = Icon{
 	Icon:  "",
 	Color: color.FgWhite,
 }
 
-var Icons = map[string]Icon{
+var icons = map[string]Icon{
 	"styl":     {Icon: "", Color: color.FgGreen},
 	"sass":     {Icon: "", Color: color.FgWhite},
 	"scss":     {Icon: "", Color: color.FgMagenta},
@@ -114,9 +115,9 @@ var Icons = map[string]Icon{
 }
 
 func NewIconString(suffix string) string {
-	icon, ok := Icons[suffix]
+	icon, ok := icons[suffix]
 	if !ok {
-		icon = DefaultFileIcon
+		icon = defaultFileIcon
 	}
 	return color.New(icon.Color).Sprint(icon.Icon)
 }
