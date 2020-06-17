@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	folderColor = color.New(color.FgBlue)
+	folderColor = color.New(defaultFolderIcon.Color)
 	symColor    = color.New(color.FgLightCyan)
 )
 
@@ -53,7 +53,7 @@ func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
 
 	switch {
 	case f.IsDir():
-		_, err = w.Write([]byte(folderColor.Sprintf(writtenName)))
+		_, err = w.Write([]byte(folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, writtenName)))
 	case f.IsSym():
 		var symLink string
 		symLink, err = f.SymLink()

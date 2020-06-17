@@ -1,6 +1,6 @@
 # gtree
 
-tree command with icons.
+🎄 tree command with icons.
 
 ![sample image](./images/sample.png)
 

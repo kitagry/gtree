@@ -8,6 +8,11 @@ type Icon struct {
 	Color color.Color
 }
 
+var defaultFolderIcon = Icon{
+	Icon:  "",
+	Color: color.FgBlue,
+}
+
 var defaultFileIcon = Icon{
 	Icon:  "",
 	Color: color.FgWhite,
