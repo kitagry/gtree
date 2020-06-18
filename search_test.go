@@ -82,9 +82,9 @@ func TestFilterFiles(t *testing.T) {
 	}{
 		{
 			&ListSearchOptions{
-				All:           []bool{},
-				OnlyDirectory: []bool{},
-				IgnorePattern: "",
+				All:            []bool{},
+				OnlyDirectory:  []bool{},
+				IgnorePatterns: []string{},
 			},
 			[]os.FileInfo{
 				newDummySearchFileInfo("file", false, false),
@@ -95,9 +95,9 @@ func TestFilterFiles(t *testing.T) {
 		},
 		{
 			&ListSearchOptions{
-				All:           []bool{true},
-				OnlyDirectory: []bool{},
-				IgnorePattern: "",
+				All:            []bool{true},
+				OnlyDirectory:  []bool{},
+				IgnorePatterns: []string{},
 			},
 			[]os.FileInfo{
 				newDummySearchFileInfo("file", false, false),
@@ -112,9 +112,9 @@ func TestFilterFiles(t *testing.T) {
 		},
 		{
 			&ListSearchOptions{
-				All:           []bool{},
-				OnlyDirectory: []bool{true},
-				IgnorePattern: "",
+				All:            []bool{},
+				OnlyDirectory:  []bool{true},
+				IgnorePatterns: []string{},
 			},
 			[]os.FileInfo{
 				newDummySearchFileInfo("folder", true, false),
@@ -123,9 +123,9 @@ func TestFilterFiles(t *testing.T) {
 		},
 		{
 			&ListSearchOptions{
-				All:           []bool{true},
-				OnlyDirectory: []bool{true},
-				IgnorePattern: "",
+				All:            []bool{true},
+				OnlyDirectory:  []bool{true},
+				IgnorePatterns: []string{},
 			},
 			[]os.FileInfo{
 				newDummySearchFileInfo("folder", true, false),
@@ -136,9 +136,9 @@ func TestFilterFiles(t *testing.T) {
 		},
 		{
 			&ListSearchOptions{
-				All:           []bool{true},
-				OnlyDirectory: []bool{true},
-				IgnorePattern: "folder",
+				All:            []bool{true},
+				OnlyDirectory:  []bool{true},
+				IgnorePatterns: []string{"folder"},
 			},
 			[]os.FileInfo{
 				newDummySearchFileInfo("sym-folder", true, true),
