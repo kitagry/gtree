@@ -48,7 +48,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 func filterFiles(files []os.FileInfo, opts *ListSearchOptions) []os.FileInfo {
 	result := make([]os.FileInfo, 0)
 	for _, f := range files {
-		if opts.IgnorePattern == f.Name() {
+		if inString(f.Name(), opts.IgnorePatterns) {
 			continue
 		}
 
@@ -63,4 +63,13 @@ func filterFiles(files []os.FileInfo, opts *ListSearchOptions) []os.FileInfo {
 		result = append(result, f)
 	}
 	return result
+}
+
+func inString(s string, list []string) bool {
+	for _, l := range list {
+		if s == l {
+			return true
+		}
+	}
+	return false
 }
