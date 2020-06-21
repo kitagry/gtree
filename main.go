@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
@@ -108,7 +109,8 @@ func Run(root string) error {
 		return err
 	}
 
-	rootFile := NewFileInfo(f, nil, true)
+	base, _ := filepath.Split(root)
+	rootFile := NewFileInfoForBase(f, nil, base, true)
 
 	if !rootFile.IsDir() {
 		rootFile.SetError(errors.New("error opening dir"))
