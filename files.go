@@ -50,10 +50,33 @@ type FileInfo interface {
 // File and Folder are implemented FileInfo interface.
 func NewFileInfo(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
 	var result FileInfo
+	base := baseFileInfo{
+		FileInfo: f,
+		parent:   parent,
+		isLast:   isLast,
+	}
+
 	if f.IsDir() {
-		result = newFolder(f, parent, isLast)
+		result = newFolder(base)
 	} else {
-		result = newFile(f, parent, isLast)
+		result = newFile(base)
+	}
+	return result
+}
+
+func NewFileInfoForBase(f os.FileInfo, parent FileInfo, base string, isLast bool) FileInfo {
+	var result FileInfo
+	b := baseFileInfo{
+		FileInfo: f,
+		base:     base,
+		parent:   parent,
+		isLast:   isLast,
+	}
+
+	if f.IsDir() {
+		result = newFolder(b)
+	} else {
+		result = newFile(b)
 	}
 	return result
 }
@@ -63,8 +86,13 @@ type baseFileInfo struct {
 
 	parent FileInfo
 	isLast bool
+	base   string
 	path   string
 	err    error
+}
+
+func (f *baseFileInfo) Name() string {
+	return f.base + f.FileInfo.Name()
 }
 
 func (f *baseFileInfo) Path() string {
@@ -121,13 +149,9 @@ type file struct {
 
 var _ FileInfo = (*file)(nil)
 
-func newFile(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
+func newFile(base baseFileInfo) FileInfo {
 	return &file{
-		baseFileInfo{
-			FileInfo: f,
-			parent:   parent,
-			isLast:   isLast,
-		},
+		base,
 	}
 }
 
@@ -152,13 +176,9 @@ type folder struct {
 
 var _ FileInfo = (*folder)(nil)
 
-func newFolder(f os.FileInfo, parent FileInfo, isLast bool) FileInfo {
+func newFolder(base baseFileInfo) FileInfo {
 	return &folder{
-		baseFileInfo: baseFileInfo{
-			FileInfo: f,
-			parent:   parent,
-			isLast:   isLast,
-		},
+		baseFileInfo: base,
 	}
 }
 
