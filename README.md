@@ -17,5 +17,21 @@ $ go get github.com/kitagry/gtree
 ## Usage
 
 ```
-$ gtree
+$ gtree -h
+Usage:
+  gtree [-adf] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]
+
+List Options:
+  -a, --all      All files are listed.
+  -d             List directories only.
+  -I=            Do not list files that match the given pattern.
+  -f             Print the full path prefix for each file.
+  -o=            Output to file instead of stdout.
+  -n             Do not show the icon of files and directories
+
+Miscellaneous Options:
+      --version  show version
+
+Help Options:
+  -h, --help     Show this help message
 ```

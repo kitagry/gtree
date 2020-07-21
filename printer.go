@@ -15,14 +15,17 @@ var (
 
 // Printer write FileInfo as tree
 type Printer struct {
+	opt *ListDisplayOptions
 }
 
 // NewPrinter return Printer pointer
-func NewPrinter() *Printer {
-	return &Printer{}
+func NewPrinter(opt *ListDisplayOptions) *Printer {
+	return &Printer{
+		opt: opt,
+	}
 }
 
-func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
+func (p *Printer) Write(w io.Writer, f FileInfo) error {
 	var err error
 	if pa, ok := f.Parent(); ok {
 		if f.IsLast() {
@@ -36,16 +39,15 @@ func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
 		}
 	}
 
-	if !f.IsDir() {
+	if !f.IsDir() && !p.opt.NoIcon() {
 		_, err = w.Write([]byte(NewIconString(f.FileType()) + " "))
-
 		if err != nil {
 			return xerrors.Errorf("failed to write: %w", err)
 		}
 	}
 
 	var writtenName string
-	if isFullPath {
+	if p.opt.IsFullPath() {
 		writtenName = f.Path()
 	} else {
 		writtenName = f.Name()
@@ -53,7 +55,11 @@ func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
 
 	switch {
 	case f.IsDir():
-		_, err = w.Write([]byte(folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, writtenName)))
+		if p.opt.NoIcon() {
+			_, err = w.Write([]byte(folderColor.Sprintf(writtenName)))
+		} else {
+			_, err = w.Write([]byte(folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, writtenName)))
+		}
 	case f.IsSym():
 		var symLink string
 		symLink, err = f.SymLink()
