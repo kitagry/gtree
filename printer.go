@@ -39,9 +39,8 @@ func (p *Printer) Write(w io.Writer, f FileInfo) error {
 		}
 	}
 
-	if !f.IsDir() {
+	if !f.IsDir() && !p.opt.NoIcon() {
 		_, err = w.Write([]byte(NewIconString(f.FileType()) + " "))
-
 		if err != nil {
 			return xerrors.Errorf("failed to write: %w", err)
 		}
@@ -56,7 +55,11 @@ func (p *Printer) Write(w io.Writer, f FileInfo) error {
 
 	switch {
 	case f.IsDir():
-		_, err = w.Write([]byte(folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, writtenName)))
+		if p.opt.NoIcon() {
+			_, err = w.Write([]byte(folderColor.Sprintf(writtenName)))
+		} else {
+			_, err = w.Write([]byte(folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, writtenName)))
+		}
 	case f.IsSym():
 		var symLink string
 		symLink, err = f.SymLink()

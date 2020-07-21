@@ -88,18 +88,17 @@ func (d *dummyPrinterFileInfo) Error() error {
 }
 
 func TestPrinter_Write(t *testing.T) {
+	noDisplayOption := &ListDisplayOptions{}
+
 	tests := map[string]struct {
 		fileInfo      FileInfo
 		displayOption *ListDisplayOptions
 		output        string
 	}{
 		"print normal": {
-			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
-			displayOption: &ListDisplayOptions{
-				FullPath: nil,
-				NoIcons:  nil,
-			},
-			output: NewIconString("go") + " test.go\n",
+			fileInfo:      newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
+			displayOption: noDisplayOption,
+			output:        NewIconString("go") + " test.go\n",
 		},
 		"print full path": {
 			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
@@ -109,59 +108,57 @@ func TestPrinter_Write(t *testing.T) {
 			},
 			output: NewIconString("go") + " test/test.go\n",
 		},
-		"print directory": {
+		"print no icon file": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  []bool{true},
+			},
+			output: "test.go\n",
+		},
+		"print no icon directory": {
 			fileInfo: newDummyPrinterFileInfo("test", "test/test", "", "", "", false, true, nil, nil),
 			displayOption: &ListDisplayOptions{
 				FullPath: nil,
-				NoIcons:  nil,
+				NoIcons:  []bool{true},
 			},
-			output: folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, "test") + "\n",
+			output: folderColor.Sprintf("test") + "\n",
+		},
+		"print directory": {
+			fileInfo:      newDummyPrinterFileInfo("test", "test/test", "", "", "", false, true, nil, nil),
+			displayOption: noDisplayOption,
+			output:        folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, "test") + "\n",
 		},
 		"print child file": {
 			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil,
 				newDummyPrinterFileInfo("test", "test", "", "", "", false, true, nil, nil),
 			),
-			displayOption: &ListDisplayOptions{
-				FullPath: nil,
-				NoIcons:  nil,
-			},
-			output: "├── " + NewIconString("go") + " test.go\n",
+			displayOption: noDisplayOption,
+			output:        "├── " + NewIconString("go") + " test.go\n",
 		},
 		"print last child file": {
 			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", true, false, nil,
 				newDummyPrinterFileInfo("test", "test", "", "", "", false, true, nil, nil),
 			),
-			displayOption: &ListDisplayOptions{
-				FullPath: nil,
-				NoIcons:  nil,
-			},
-			output: "└── " + NewIconString("go") + " test.go\n",
+			displayOption: noDisplayOption,
+			output:        "└── " + NewIconString("go") + " test.go\n",
 		},
 		"print grandchild file": {
 			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", true, false, nil,
 				newDummyPrinterFileInfo("test", "test", "", "│   ", "", false, true, nil, nil),
 			),
-			displayOption: &ListDisplayOptions{
-				FullPath: nil,
-				NoIcons:  nil,
-			},
-			output: "│   └── " + NewIconString("go") + " test.go\n",
+			displayOption: noDisplayOption,
+			output:        "│   └── " + NewIconString("go") + " test.go\n",
 		},
 		"print symlink file": {
-			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "/test.go", false, false, nil, nil),
-			displayOption: &ListDisplayOptions{
-				FullPath: nil,
-				NoIcons:  nil,
-			},
-			output: fmt.Sprintf("%s %s -> %s\n", NewIconString("go"), symColor.Sprint("test.go"), "/test.go"),
+			fileInfo:      newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "/test.go", false, false, nil, nil),
+			displayOption: noDisplayOption,
+			output:        fmt.Sprintf("%s %s -> %s\n", NewIconString("go"), symColor.Sprint("test.go"), "/test.go"),
 		},
 		"print error file": {
-			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, errors.New("Hello"), nil),
-			displayOption: &ListDisplayOptions{
-				FullPath: nil,
-				NoIcons:  nil,
-			},
-			output: NewIconString("go") + " test.go [Hello]\n",
+			fileInfo:      newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, errors.New("Hello"), nil),
+			displayOption: noDisplayOption,
+			output:        NewIconString("go") + " test.go [Hello]\n",
 		},
 	}
 
