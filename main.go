@@ -45,11 +45,18 @@ type ListDisplayOptions struct {
 	FullPath []bool `short:"f" description:"Print the full path prefix for each file."`
 
 	Output string `short:"o" description:"Output to file instead of stdout."`
+
+	NoIcons []bool `short:"n" description:"Do not show the icon of files and directories"`
 }
 
 // IsFullPath returns true, if user specify '-f' option.
 func (l *ListDisplayOptions) IsFullPath() bool {
 	return len(l.FullPath) != 0
+}
+
+// NoIcon returns true, if user specify '-n' option.
+func (l *ListDisplayOptions) NoIcon() bool {
+	return len(l.NoIcons) != 0
 }
 
 type MiscellaneousOptions struct {
@@ -144,9 +151,9 @@ func Run(root string) error {
 	}
 
 	w := bufio.NewWriter(out)
-	p := NewPrinter()
+	p := NewPrinter(opts.ListOptions.ListDisplayOptions)
 	for file := range ch {
-		err := p.Write(w, file, opts.ListOptions.ListDisplayOptions.IsFullPath())
+		err := p.Write(w, file)
 		if err != nil {
 			w.Flush()
 			return err

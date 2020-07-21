@@ -15,14 +15,17 @@ var (
 
 // Printer write FileInfo as tree
 type Printer struct {
+	opt *ListDisplayOptions
 }
 
 // NewPrinter return Printer pointer
-func NewPrinter() *Printer {
-	return &Printer{}
+func NewPrinter(opt *ListDisplayOptions) *Printer {
+	return &Printer{
+		opt: opt,
+	}
 }
 
-func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
+func (p *Printer) Write(w io.Writer, f FileInfo) error {
 	var err error
 	if pa, ok := f.Parent(); ok {
 		if f.IsLast() {
@@ -45,7 +48,7 @@ func (p *Printer) Write(w io.Writer, f FileInfo, isFullPath bool) error {
 	}
 
 	var writtenName string
-	if isFullPath {
+	if p.opt.IsFullPath() {
 		writtenName = f.Path()
 	} else {
 		writtenName = f.Name()

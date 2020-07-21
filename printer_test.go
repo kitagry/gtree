@@ -88,71 +88,92 @@ func (d *dummyPrinterFileInfo) Error() error {
 }
 
 func TestPrinter_Write(t *testing.T) {
-	p := NewPrinter()
-	inputs := []struct {
-		fileInfo            FileInfo
-		fullPathExpected    string
-		notFullPathExpected string
+	tests := map[string]struct {
+		fileInfo      FileInfo
+		displayOption *ListDisplayOptions
+		output        string
 	}{
-		{
-			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
-			NewIconString("go") + " test.go\n",
-			NewIconString("go") + " test/test.go\n",
+		"print normal": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: NewIconString("go") + " test.go\n",
 		},
-		{
-			newDummyPrinterFileInfo("test.rb", "test/test.rb", "rb", "", "", false, false, nil, nil),
-			NewIconString("rb") + " test.rb\n",
-			NewIconString("rb") + " test/test.rb\n",
+		"print full path": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil, nil),
+			displayOption: &ListDisplayOptions{
+				FullPath: []bool{true},
+				NoIcons:  nil,
+			},
+			output: NewIconString("go") + " test/test.go\n",
 		},
-		{
-			newDummyPrinterFileInfo("test", "test/test", "", "", "", false, true, nil, nil),
-			folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, "test") + "\n",
-			folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, "test/test") + "\n",
+		"print directory": {
+			fileInfo: newDummyPrinterFileInfo("test", "test/test", "", "", "", false, true, nil, nil),
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: folderColor.Sprintf("%s %s", defaultFolderIcon.Icon, "test") + "\n",
 		},
-		{
-			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil,
+		"print child file": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, nil,
 				newDummyPrinterFileInfo("test", "test", "", "", "", false, true, nil, nil),
 			),
-			"├── " + NewIconString("go") + " test.go\n",
-			"├── " + NewIconString("go") + " test/test.go\n",
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: "├── " + NewIconString("go") + " test.go\n",
 		},
-		{
-			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", true, false, nil,
+		"print last child file": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", true, false, nil,
 				newDummyPrinterFileInfo("test", "test", "", "", "", false, true, nil, nil),
 			),
-			"└── " + NewIconString("go") + " test.go\n",
-			"└── " + NewIconString("go") + " test/test.go\n",
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: "└── " + NewIconString("go") + " test.go\n",
 		},
-		{
-			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", true, false, nil,
+		"print grandchild file": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", true, false, nil,
 				newDummyPrinterFileInfo("test", "test", "", "│   ", "", false, true, nil, nil),
 			),
-			"│   └── " + NewIconString("go") + " test.go\n",
-			"│   └── " + NewIconString("go") + " test/test.go\n",
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: "│   └── " + NewIconString("go") + " test.go\n",
 		},
-		{
-			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "/test.go", false, false, nil, nil),
-			fmt.Sprintf("%s %s -> %s\n", NewIconString("go"), symColor.Sprint("test.go"), "/test.go"),
-			fmt.Sprintf("%s %s -> %s\n", NewIconString("go"), symColor.Sprint("test/test.go"), "/test.go"),
+		"print symlink file": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "/test.go", false, false, nil, nil),
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: fmt.Sprintf("%s %s -> %s\n", NewIconString("go"), symColor.Sprint("test.go"), "/test.go"),
 		},
-		{
-			newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, errors.New("Hello"), nil),
-			NewIconString("go") + " test.go [Hello]\n",
-			NewIconString("go") + " test/test.go [Hello]\n",
+		"print error file": {
+			fileInfo: newDummyPrinterFileInfo("test.go", "test/test.go", "go", "", "", false, false, errors.New("Hello"), nil),
+			displayOption: &ListDisplayOptions{
+				FullPath: nil,
+				NoIcons:  nil,
+			},
+			output: NewIconString("go") + " test.go [Hello]\n",
 		},
 	}
 
-	for _, input := range inputs {
-		buffer := new(bytes.Buffer)
-		p.Write(buffer, input.fileInfo, false)
-		if buffer.String() != input.fullPathExpected {
-			t.Errorf("printer.Write() expected %s, got %s", input.fullPathExpected, buffer.String())
-		}
+	for key, tt := range tests {
+		t.Run(key, func(t *testing.T) {
+			p := NewPrinter(tt.displayOption)
 
-		buffer = new(bytes.Buffer)
-		p.Write(buffer, input.fileInfo, true)
-		if buffer.String() != input.notFullPathExpected {
-			t.Errorf("printer.Write() expected %s, got %s", input.notFullPathExpected, buffer.String())
-		}
+			buffer := new(bytes.Buffer)
+			p.Write(buffer, tt.fileInfo)
+			if buffer.String() != tt.output {
+				t.Errorf("printer.Write() expected '%s', got '%s'", tt.output, buffer.String())
+			}
+		})
 	}
 }
