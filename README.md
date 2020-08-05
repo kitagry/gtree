@@ -19,7 +19,7 @@ $ go get github.com/kitagry/gtree
 ```
 $ gtree -h
 Usage:
-  gtree [-adf] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]
+  gtree [-adfhn] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]
 
 List Options:
   -a, --all      All files are listed.
