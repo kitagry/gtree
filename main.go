@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
+	"golang.org/x/xerrors"
 )
 
 // ListOptions is Options for basic gtree command.
@@ -69,26 +69,23 @@ type Options struct {
 	MiscellaneousOptions *MiscellaneousOptions `group:"Miscellaneous Options"`
 }
 
-var (
-	opts Options
-)
-
-func newOptionsParser(opt *Options) *flags.Parser {
-	opt.ListOptions = &ListOptions{}
-	opt.MiscellaneousOptions = &MiscellaneousOptions{}
+func newOptionsParser(opts *Options) *flags.Parser {
+	opts.ListOptions = &ListOptions{}
+	opts.MiscellaneousOptions = &MiscellaneousOptions{}
 
 	opts.MiscellaneousOptions.Version = func() {
 		fmt.Println("gtree v0.2")
 		os.Exit(0)
 	}
 
-	parser := flags.NewParser(&opts, flags.Default)
+	parser := flags.NewParser(opts, flags.Default)
 	parser.Name = "gtree"
 	parser.Usage = "[-adfn] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]"
 	return parser
 }
 
 func main() {
+	var opts Options
 	parser := newOptionsParser(&opts)
 
 	directories, err := parser.Parse()
@@ -101,7 +98,7 @@ func main() {
 	}
 
 	for _, d := range directories {
-		err = Run(d)
+		err = Run(d, opts)
 		if err != nil {
 			panic(err)
 		}
@@ -110,40 +107,36 @@ func main() {
 
 // Run is to search files, and display these files.
 // Search and Display communicate through channel.
-func Run(root string) error {
+func Run(root string, opts Options) error {
 	f, err := os.Stat(root)
 	if err != nil {
-		return err
+		return xerrors.Errorf("failed to find root: %v", err)
 	}
 
 	base, _ := filepath.Split(root)
 	rootFile := NewFileInfoForBase(f, nil, base, true)
+	ch := make(chan FileInfo)
 
 	if !rootFile.IsDir() {
-		rootFile.SetError(errors.New("error opening dir"))
+		errRootIsNotDir := fmt.Errorf("%s is not dir", rootFile.Name())
+		rootFile.SetError(errRootIsNotDir)
 	}
-	ch := make(chan FileInfo)
 
 	// Search files.
 	go Dirwalk(rootFile, ch, opts.ListOptions.ListSearchOptions)
 
 	// Display files.
 	var out io.Writer
+
 	if outputFile := opts.ListOptions.ListDisplayOptions.Output; outputFile != "" {
 		var err error
-		if _, err = os.Stat(outputFile); !os.IsNotExist(err) {
-			fmt.Printf("Output file already exists. Are you sure to overwrite %s?[Y/n] ", outputFile)
-
-			var answer string
-			fmt.Scan(&answer)
-			if strings.ToLower(strings.TrimRight(answer, "\n")) != "y" {
-				return fmt.Errorf("output file already exists")
-			}
+		if err = checkOverWrite(outputFile); err != nil {
+			return xerrors.Errorf("denided overwrite: %w", err)
 		}
 
 		out, err = os.Create(outputFile)
 		if err != nil {
-			return fmt.Errorf("file create/open error: %v", err)
+			return xerrors.Errorf("file create/open error: %w", err)
 		}
 		defer out.(*os.File).Close()
 	} else {
@@ -152,13 +145,33 @@ func Run(root string) error {
 
 	w := bufio.NewWriter(out)
 	p := NewPrinter(opts.ListOptions.ListDisplayOptions)
+
 	for file := range ch {
 		err := p.Write(w, file)
 		if err != nil {
-			w.Flush()
 			return err
 		}
 	}
+
 	w.Flush()
+	return nil
+}
+
+var errFileExist = fmt.Errorf("output file already exists")
+
+func checkOverWrite(filename string) error {
+	var err error
+	if _, err = os.Stat(filename); !os.IsNotExist(err) {
+		fmt.Printf("Output file already exists. Are you sure to overwrite %s?[Y/n] ", filename)
+
+		var answer string
+		if _, err = fmt.Scan(&answer); err != nil {
+			return xerrors.Errorf("failed to scan answer: %v", err)
+		}
+
+		if strings.ToLower(strings.TrimRight(answer, "\n")) != "y" {
+			return errFileExist
+		}
+	}
 	return nil
 }

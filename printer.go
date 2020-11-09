@@ -13,29 +13,36 @@ var (
 	symColor    = color.New(color.FgLightCyan)
 )
 
-// Printer write FileInfo as tree
+// Printer write FileInfo as tree.
 type Printer struct {
 	opt *ListDisplayOptions
 }
 
-// NewPrinter return Printer pointer
+// NewPrinter return Printer pointer.
 func NewPrinter(opt *ListDisplayOptions) *Printer {
 	return &Printer{
 		opt: opt,
 	}
 }
 
-func (p *Printer) Write(w io.Writer, f FileInfo) error {
-	var err error
-	if pa, ok := f.Parent(); ok {
-		if f.IsLast() {
-			_, err = w.Write([]byte(pa.ChildPrefix() + "└── "))
-		} else {
-			_, err = w.Write([]byte(pa.ChildPrefix() + "├── "))
-		}
+func (p *Printer) writePrefix(w io.Writer, f FileInfo, prefix string) (err error) {
+	if f.IsLast() {
+		_, err = w.Write([]byte(prefix + "└── "))
+	} else {
+		_, err = w.Write([]byte(prefix + "├── "))
+	}
 
+	if err != nil {
+		return xerrors.Errorf("failed to write: %w", err)
+	}
+	return nil
+}
+
+func (p *Printer) Write(w io.Writer, f FileInfo) (err error) {
+	if pa, ok := f.Parent(); ok {
+		err = p.writePrefix(w, f, pa.ChildPrefix())
 		if err != nil {
-			return xerrors.Errorf("failed to write: %w", err)
+			return xerrors.Errorf("failed to writePrefix: %w", err)
 		}
 	}
 
@@ -63,6 +70,7 @@ func (p *Printer) Write(w io.Writer, f FileInfo) error {
 	case f.IsSym():
 		var symLink string
 		symLink, err = f.SymLink()
+
 		if err != nil {
 			return xerrors.Errorf("failed to retrieve symlink path: %w", err)
 		}
