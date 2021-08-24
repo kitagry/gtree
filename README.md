@@ -19,12 +19,14 @@ $ go get github.com/kitagry/gtree
 ```
 $ gtree -h
 Usage:
-  gtree [-adfhn] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]
+  gtree [-adfn] [--version] [-I pattern] [-o filename] [-L level] [--help] [--]
+[<directory list>]
 
 List Options:
   -a, --all      All files are listed.
   -d             List directories only.
   -I=            Do not list files that match the given pattern.
+  -L, --level=   Descend only level directories deep.
   -f             Print the full path prefix for each file.
   -o=            Output to file instead of stdout.
   -n             Do not show the icon of files and directories

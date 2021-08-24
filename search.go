@@ -8,15 +8,20 @@ import (
 )
 
 func Dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) {
-	err := dirwalk(root, ch, listOptions)
+	err := dirwalk(root, ch, 0, listOptions)
 	if err != nil {
 		fmt.Println(err)
 	}
 	close(ch)
 }
 
-func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) error {
+func dirwalk(root FileInfo, ch chan<- FileInfo, depth int, listOptions *ListSearchOptions) error {
 	if !root.IsDir() {
+		ch <- root
+		return nil
+	}
+
+	if listOptions.Level != nil && depth >= *listOptions.Level {
 		ch <- root
 		return nil
 	}
@@ -36,7 +41,7 @@ func dirwalk(root FileInfo, ch chan<- FileInfo, listOptions *ListSearchOptions) 
 
 		child := NewFileInfo(file, root, isLast)
 
-		err = dirwalk(child, ch, listOptions)
+		err = dirwalk(child, ch, depth+1, listOptions)
 		if err != nil {
 			return err
 		}
