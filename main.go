@@ -28,6 +28,8 @@ type ListSearchOptions struct {
 	OnlyDirectory []bool `short:"d" description:"List directories only."`
 
 	IgnorePatterns []string `short:"I" description:"Do not list files that match the given pattern."`
+
+	Level *int `short:"L" long:"level" description:"Descend only level directories deep."`
 }
 
 // IsAll returns true, if user specify '-a' or '-all' option.
@@ -80,7 +82,7 @@ func newOptionsParser(opts *Options) *flags.Parser {
 
 	parser := flags.NewParser(opts, flags.Default)
 	parser.Name = "gtree"
-	parser.Usage = "[-adfn] [--version] [-I pattern] [-o filename] [--help] [--] [<directory list>]"
+	parser.Usage = "[-adfn] [--version] [-I pattern] [-o filename] [-L level] [--help] [--] [<directory list>]"
 	return parser
 }
 
@@ -100,7 +102,8 @@ func main() {
 	for _, d := range directories {
 		err = Run(d, opts)
 		if err != nil {
-			panic(err)
+			fmt.Printf("%s: %v\n", parser.Name, err)
+			os.Exit(1)
 		}
 	}
 }
@@ -108,6 +111,10 @@ func main() {
 // Run is to search files, and display these files.
 // Search and Display communicate through channel.
 func Run(root string, opts Options) error {
+	if opts.ListOptions.ListSearchOptions.Level != nil && *opts.ListOptions.ListSearchOptions.Level <= 0 {
+		return fmt.Errorf("Invalid level, must be greater than 0.")
+	}
+
 	f, err := os.Stat(root)
 	if err != nil {
 		return xerrors.Errorf("failed to find root: %v", err)
